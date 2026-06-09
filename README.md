@@ -3,17 +3,25 @@
 
 ## Setup Instructions
 
-### 1. Supabase Setup
-1. Create a free project at https://supabase.com
-2. Go to SQL Editor → paste the full contents of `supabase/schema.sql` → Run
-3. Go to Storage → Create bucket named `listing-images` → Set to **Public**
-4. Go to Project Settings → API → copy your `URL` and `anon key`
+### 1. Firebase Setup
+See `firestore/README.md` for full Firestore + Storage security rules and index setup.
+
+Quick steps:
+1. Create a project at https://console.firebase.google.com
+2. Enable **Authentication** (Email/Password)
+3. Enable **Firestore Database**
+4. Enable **Storage**
+5. Go to Project Settings → Your apps → Add Web App → copy config
 
 ### 2. Environment Variables
 Create `.env.local`:
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
 ```
 
 ### 3. Run Locally
@@ -23,32 +31,32 @@ npm run dev
 ```
 
 ### 4. Deploy
-Push to GitHub, connect to Vercel, add the same env vars in Vercel dashboard.
+Push to GitHub → connect to Vercel → add the env vars in Vercel dashboard.
 
 ## MVP Features
 - ✅ Browse listings by category
-- ✅ Full-text search
-- ✅ Post ads with up to 5 photos
-- ✅ Email auth (register / login)
+- ✅ Title-prefix search
+- ✅ Post ads with up to 5 photos (Firebase Storage)
+- ✅ Email auth (register / login via Firebase Auth)
 - ✅ WhatsApp + Phone contact buttons
 - ✅ All 14 Liberia counties
 - ✅ Mark items as sold
 - ✅ Seller profile with ad management
 - ✅ Mobile-first, works on any phone
 
-## Liberia-Specific Customizations
-- USD pricing (standard in Liberia)
-- WhatsApp as primary contact method
-- All 14 Liberian counties in dropdowns
-- Liberian flag 🇱🇷 branding (red/blue)
-- Safety tip: "Meet in a safe public place"
-- No credit card required to post
+## Architecture
+- **Auth**: Firebase Authentication (email/password)
+- **Database**: Cloud Firestore
+- **Storage**: Firebase Storage (listing images)
+- **Frontend**: Next.js 14 App Router (all client components)
+- **Seller info** is denormalized into each listing document for fast reads without joins
 
-## Phase 2 Ideas (After MVP)
+## Phase 2 Ideas
 - [ ] Boost/featured listings (monetization)
 - [ ] In-app messaging
 - [ ] Save/favorite listings
 - [ ] Seller ratings & reviews
-- [ ] Push notifications
+- [ ] Push notifications (FCM)
 - [ ] PWA (installable on phone)
 - [ ] Liberian Dollar (LRD) price toggle
+- [ ] Algolia integration for full-text search

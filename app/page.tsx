@@ -1,43 +1,42 @@
-import { supabase } from '@/lib/supabase';
+'use client';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { CATEGORIES, getCategoryBySlug } from '@/lib/categories';
 import ListingGrid from '@/components/ListingGrid';
 import CategoryBar from '@/components/CategoryBar';
 import Link from 'next/link';
+import type { Listing } from '@/lib/types';
 
-export const revalidate = 60;
+export default function HomePage() {
+  const searchParams = useSearchParams();
+  const categorySlug = searchParams.get('category') ?? undefined;
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: { category?: string };
-}) {
-  const categorySlug = searchParams.category;
+  useEffect(() => {
+    async function fetchListings() {
+      setLoading(true);
+      const constraints: any[] = [
+        where('is_active', '==', true),
+        where('is_sold', '==', false),
+        orderBy('created_at', 'desc'),
+        limit(40),
+      ];
+      if (categorySlug) {
+        constraints.unshift(where('category_slug', '==', categorySlug));
+      }
 
-  let categoryId: number | null = null;
-  if (categorySlug) {
-    const { data: cat } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('slug', categorySlug)
-      .single();
-    categoryId = cat?.id ?? null;
-  }
+      const q = query(collection(db, 'listings'), ...constraints);
+      const snap = await getDocs(q);
+      setListings(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Listing)));
+      setLoading(false);
+    }
+    fetchListings();
+  }, [categorySlug]);
 
-  let query = supabase
-    .from('listings')
-    .select('*, profiles(full_name, whatsapp_number, location), categories(name, icon, slug)')
-    .eq('is_active', true)
-    .eq('is_sold', false)
-    .order('created_at', { ascending: false })
-    .limit(40);
-
-  if (categoryId) query = query.eq('category_id', categoryId);
-
-  const { data: listings } = await query;
-
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*')
-    .order('name');
+  const activeCategory = categorySlug ? getCategoryBySlug(categorySlug) : undefined;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-4">
@@ -50,14 +49,27 @@ export default async function HomePage({
         </Link>
       </div>
 
-      {/* Category Filter Bar */}
-      <CategoryBar categories={categories ?? []} activeSlug={categorySlug} />
+      <CategoryBar categories={CATEGORIES} activeSlug={categorySlug} />
 
-      {/* Listings Grid */}
       <h2 className="text-lg font-bold text-gray-800 mb-3 mt-4">
-        {categorySlug ? `${categories?.find(c => c.slug === categorySlug)?.name ?? ''} Listings` : 'Recent Listings'}
+        {activeCategory ? `${activeCategory.name} Listings` : 'Recent Listings'}
       </h2>
-      <ListingGrid listings={listings ?? []} />
+
+      {loading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="card animate-pulse">
+              <div className="aspect-square bg-gray-200" />
+              <div className="p-3 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-1/2" />
+                <div className="h-3 bg-gray-200 rounded w-3/4" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <ListingGrid listings={listings} />
+      )}
     </div>
   );
 }

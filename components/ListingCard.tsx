@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { getCategoryBySlug } from '@/lib/categories';
 import type { Listing } from '@/lib/types';
 
 function timeAgo(dateStr: string): string {
@@ -14,6 +15,7 @@ function timeAgo(dateStr: string): string {
 
 export default function ListingCard({ listing }: { listing: Listing }) {
   const mainImage = listing.images?.[0];
+  const category = getCategoryBySlug(listing.category_slug);
   const formattedPrice = new Intl.NumberFormat('en-US', {
     style: 'currency', currency: 'USD', maximumFractionDigits: 0
   }).format(listing.price);
@@ -31,7 +33,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-4xl text-gray-300">
-            {(listing as any).categories?.icon ?? '📦'}
+            {category?.icon ?? '📦'}
           </div>
         )}
         {listing.is_sold && (

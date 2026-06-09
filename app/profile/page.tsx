@@ -1,7 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, query, where, orderBy, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import ListingCard from '@/components/ListingCard';
 import type { Listing, Profile } from '@/lib/types';
 
@@ -13,31 +15,33 @@ export default function ProfilePage() {
   const [tab, setTab] = useState<'active' | 'sold'>('active');
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) { router.push('/auth'); return; }
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) { router.push('/auth'); return; }
 
-      const [profileRes, listingsRes] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', data.user.id).single(),
-        supabase.from('listings')
-          .select('*, categories(name, icon, slug)')
-          .eq('seller_id', data.user.id)
-          .order('created_at', { ascending: false }),
+      const [profileSnap, listingsSnap] = await Promise.all([
+        getDoc(doc(db, 'profiles', user.uid)),
+        getDocs(query(
+          collection(db, 'listings'),
+          where('seller_id', '==', user.uid),
+          orderBy('created_at', 'desc'),
+        )),
       ]);
 
-      setProfile(profileRes.data);
-      setListings(listingsRes.data ?? []);
+      setProfile(profileSnap.data() as Profile ?? null);
+      setListings(listingsSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Listing)));
       setLoading(false);
     });
+    return () => unsub();
   }, [router]);
 
   const markSold = async (id: string) => {
-    await supabase.from('listings').update({ is_sold: true }).eq('id', id);
+    await updateDoc(doc(db, 'listings', id), { is_sold: true });
     setListings((prev) => prev.map((l) => l.id === id ? { ...l, is_sold: true } : l));
   };
 
   const deleteListing = async (id: string) => {
     if (!confirm('Delete this listing?')) return;
-    await supabase.from('listings').update({ is_active: false }).eq('id', id);
+    await updateDoc(doc(db, 'listings', id), { is_active: false });
     setListings((prev) => prev.filter((l) => l.id !== id));
   };
 
