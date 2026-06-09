@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-red: #BF1F2E;
+  --brand-blue: #0B3D91;
+  --brand-white: #FFFFFF;
+}
+
+@layer utilities {
+  .btn-primary {
+    @apply bg-[#BF1F2E] hover:bg-[#9e1925] text-white font-semibold px-4 py-2 rounded-lg transition-colors;
+  }
+  .btn-secondary {
+    @apply bg-[#0B3D91] hover:bg-[#082d6b] text-white font-semibold px-4 py-2 rounded-lg transition-colors;
+  }
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden;
+  }
+}
