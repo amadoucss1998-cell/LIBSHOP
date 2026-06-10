@@ -2,7 +2,7 @@
 create extension if not exists "uuid-ossp";
 
 -- Profiles table (extends Supabase auth.users)
-create table profiles (
+create table if not exists profiles (
   id uuid references auth.users on delete cascade primary key,
   full_name text not null,
   phone_number text,
@@ -13,14 +13,14 @@ create table profiles (
 );
 
 -- Categories table
-create table categories (
+create table if not exists categories (
   id serial primary key,
   name text not null unique,
   icon text not null,
   slug text not null unique
 );
 
--- Insert default categories
+-- Insert default categories (skip if already exist)
 insert into categories (name, icon, slug) values
   ('Electronics', '📱', 'electronics'),
   ('Vehicles', '🚗', 'vehicles'),
@@ -30,10 +30,11 @@ insert into categories (name, icon, slug) values
   ('Farm & Food', '🌽', 'farm-food'),
   ('Services', '🔧', 'services'),
   ('Jobs', '💼', 'jobs'),
-  ('Other', '📦', 'other');
+  ('Other', '📦', 'other')
+on conflict (slug) do nothing;
 
 -- Listings table
-create table listings (
+create table if not exists listings (
   id uuid default uuid_generate_v4() primary key,
   seller_id uuid references profiles(id) on delete cascade not null,
   title text not null,
@@ -55,14 +56,14 @@ create table listings (
   ) stored
 );
 
--- Indexes
-create index listings_search_idx on listings using gin(search_vector);
-create index listings_category_idx on listings(category_id);
-create index listings_seller_idx on listings(seller_id);
-create index listings_created_idx on listings(created_at desc);
+-- Indexes (safe to re-run)
+create index if not exists listings_search_idx on listings using gin(search_vector);
+create index if not exists listings_category_idx on listings(category_id);
+create index if not exists listings_seller_idx on listings(seller_id);
+create index if not exists listings_created_idx on listings(created_at desc);
 
 -- Saved/Favorites table
-create table saved_listings (
+create table if not exists saved_listings (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid references profiles(id) on delete cascade not null,
   listing_id uuid references listings(id) on delete cascade not null,
@@ -76,17 +77,44 @@ alter table listings enable row level security;
 alter table saved_listings enable row level security;
 
 -- Profiles policies
-create policy "Public profiles are viewable by everyone" on profiles for select using (true);
-create policy "Users can insert own profile" on profiles for insert with check (auth.uid() = id);
-create policy "Users can update own profile" on profiles for update using (auth.uid() = id);
+do $$ begin
+  create policy "Public profiles are viewable by everyone" on profiles for select using (true);
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create policy "Users can insert own profile" on profiles for insert with check (auth.uid() = id);
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create policy "Users can update own profile" on profiles for update using (auth.uid() = id);
+exception when duplicate_object then null; end $$;
 
 -- Listings policies
-create policy "Listings are viewable by everyone" on listings for select using (is_active = true);
-create policy "Authenticated users can create listings" on listings for insert with check (auth.uid() = seller_id);
-create policy "Sellers can update own listings" on listings for update using (auth.uid() = seller_id);
-create policy "Sellers can delete own listings" on listings for delete using (auth.uid() = seller_id);
+do $$ begin
+  create policy "Listings are viewable by everyone" on listings for select using (is_active = true);
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create policy "Authenticated users can create listings" on listings for insert with check (auth.uid() = seller_id);
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create policy "Sellers can update own listings" on listings for update using (auth.uid() = seller_id);
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create policy "Sellers can delete own listings" on listings for delete using (auth.uid() = seller_id);
+exception when duplicate_object then null; end $$;
 
 -- Saved listings policies
-create policy "Users can view own saved listings" on saved_listings for select using (auth.uid() = user_id);
-create policy "Users can save listings" on saved_listings for insert with check (auth.uid() = user_id);
-create policy "Users can unsave listings" on saved_listings for delete using (auth.uid() = user_id);
+do $$ begin
+  create policy "Users can view own saved listings" on saved_listings for select using (auth.uid() = user_id);
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create policy "Users can save listings" on saved_listings for insert with check (auth.uid() = user_id);
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create policy "Users can unsave listings" on saved_listings for delete using (auth.uid() = user_id);
+exception when duplicate_object then null; end $$;
