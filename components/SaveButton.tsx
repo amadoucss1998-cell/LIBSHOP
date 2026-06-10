@@ -6,9 +6,10 @@ import { supabase } from '@/lib/supabase';
 interface Props {
   listingId: string;
   initialSaved?: boolean;
+  inline?: boolean; // when true, renders as inline button (not absolutely positioned)
 }
 
-export default function SaveButton({ listingId, initialSaved = false }: Props) {
+export default function SaveButton({ listingId, initialSaved = false, inline = false }: Props) {
   const router = useRouter();
   const [saved, setSaved] = useState(initialSaved);
   const [loading, setLoading] = useState(false);
@@ -60,7 +61,7 @@ export default function SaveButton({ listingId, initialSaved = false }: Props) {
     <button
       onClick={handleClick}
       disabled={loading}
-      className="absolute top-2 right-2 z-20 w-9 h-9 rounded-full bg-white shadow-md flex items-center justify-center active:scale-90 transition-transform disabled:opacity-60"
+      className={`${inline ? 'relative' : 'absolute top-2 right-2 z-20'} w-9 h-9 rounded-full bg-white shadow-md flex items-center justify-center active:scale-90 transition-transform disabled:opacity-60`}
       aria-label={saved ? 'Remove from saved' : 'Save'}
     >
       {loading ? (

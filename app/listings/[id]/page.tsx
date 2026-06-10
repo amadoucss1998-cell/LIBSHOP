@@ -6,6 +6,7 @@ import Link from 'next/link';
 import ListingActions from '@/components/ListingActions';
 import ReportButton from '@/components/ReportButton';
 import StartChatButton from '@/components/StartChatButton';
+import SaveButton from '@/components/SaveButton';
 
 export default async function ListingDetailPage({ params }: { params: { id: string } }) {
   const { data: listing } = await supabase
@@ -22,7 +23,6 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
   const alreadyViewed = cookieStore.has(viewKey);
 
   if (!alreadyViewed) {
-    // upsert with ignoreDuplicates avoids errors on re-visits
     await supabase
       .from('listing_views')
       .upsert(
@@ -43,9 +43,21 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
     ? new Date(seller.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     : '—';
 
-  // Get current user to show owner controls
+  // Get current user to show owner controls + saved state
   const { data: { user } } = await supabase.auth.getUser();
   const isOwner = user?.id === listing.seller_id;
+
+  // Check if already saved
+  let initialSaved = false;
+  if (user && !isOwner) {
+    const { data: saved } = await supabase
+      .from('saved_listings')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('listing_id', params.id)
+      .maybeSingle();
+    initialSaved = !!saved;
+  }
 
   return (
     <>
@@ -62,7 +74,12 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
           </Link>
           <div className="flex items-center gap-2">
             {isOwner && <ListingActions listingId={listing.id} isSold={listing.is_sold} />}
-            {!isOwner && <ReportButton listingId={listing.id} />}
+            {!isOwner && (
+              <>
+                <SaveButton listingId={listing.id} initialSaved={initialSaved} inline />
+                <ReportButton listingId={listing.id} />
+              </>
+            )}
           </div>
         </div>
 
