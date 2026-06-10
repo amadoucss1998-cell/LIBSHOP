@@ -4,6 +4,7 @@ import './globals.css';
 import TopBar from '@/components/TopBar';
 import BottomNav from '@/components/BottomNav';
 import MessageNotifications from '@/components/MessageNotifications';
+import AuthHashHandler from '@/components/AuthHashHandler';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${inter.className} bg-[#F5F5F5]`}>
+        <AuthHashHandler />
         <TopBar />
         <MessageNotifications />
         <main className="min-h-screen pb-20 pt-[104px]">
