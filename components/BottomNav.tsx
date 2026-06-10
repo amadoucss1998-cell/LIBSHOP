@@ -35,7 +35,7 @@ export default function BottomNav() {
         .select('id')
         .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`);
 
-      if (!convs?.length) return;
+      if (!convs?.length) { setUnreadCount(0); return; }
 
       const convIds = convs.map((c: { id: string }) => c.id);
       const { count } = await supabase
@@ -57,7 +57,7 @@ export default function BottomNav() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [isLoggedIn]);
+  }, [isLoggedIn, pathname]);
 
   const active = (path: string) => pathname === path;
 
