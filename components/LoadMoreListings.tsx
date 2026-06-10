@@ -19,12 +19,13 @@ export default function LoadMoreListings({ initialListings, categoryId }: Props)
 
   // Load the current user's saved listing IDs on mount
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
+    supabase.auth.getSession().then(async ({ data }) => {
+      const user = data.session?.user;
+      if (!user) return;
       const { data: saved } = await supabase
         .from('saved_listings')
         .select('listing_id')
-        .eq('user_id', data.user.id);
+        .eq('user_id', user.id);
       if (saved) setSavedIds(new Set(saved.map((s: { listing_id: string }) => s.listing_id)));
     });
   }, []);

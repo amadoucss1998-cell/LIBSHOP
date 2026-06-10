@@ -66,7 +66,8 @@ export async function uploadListingImages(files: File[], listingId: string): Pro
 // ─── Saved listings ──────────────────────────────────────────────────────────
 
 export async function toggleSaveListing(listingId: string): Promise<boolean | null> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) return null;
 
   const { data: existing } = await supabase
