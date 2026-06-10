@@ -32,12 +32,13 @@ export default async function HomePage({
 
   if (categoryId) query = query.eq('category_id', categoryId);
 
-  const { data: listings } = await query;
-
-  const { data: categories } = await supabase
+  const { data: listings, error: listingsError } = await query;
+  const { data: categories, error: categoriesError } = await supabase
     .from('categories')
     .select('*')
     .order('name');
+
+  const dbError = listingsError || categoriesError;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-4">
@@ -50,12 +51,21 @@ export default async function HomePage({
         </Link>
       </div>
 
-      <CategoryBar categories={categories ?? []} activeSlug={categorySlug} />
-
-      <h2 className="text-lg font-bold text-gray-800 mb-3 mt-4">
-        {categorySlug ? `${categories?.find(c => c.slug === categorySlug)?.name ?? ''} Listings` : 'Recent Listings'}
-      </h2>
-      <ListingGrid listings={listings ?? []} />
+      {dbError ? (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-sm text-red-700 space-y-2">
+          <p className="font-semibold">⚠️ Database not set up yet</p>
+          <p>Run <code className="bg-red-100 px-1 rounded">supabase/schema.sql</code> in your Supabase SQL Editor, then create a public <code className="bg-red-100 px-1 rounded">listing-images</code> storage bucket.</p>
+          <p className="text-red-500 text-xs font-mono">{dbError.message}</p>
+        </div>
+      ) : (
+        <>
+          <CategoryBar categories={categories ?? []} activeSlug={categorySlug} />
+          <h2 className="text-lg font-bold text-gray-800 mb-3 mt-4">
+            {categorySlug ? `${categories?.find(c => c.slug === categorySlug)?.name ?? ''} Listings` : 'Recent Listings'}
+          </h2>
+          <ListingGrid listings={listings ?? []} />
+        </>
+      )}
     </div>
   );
 }
