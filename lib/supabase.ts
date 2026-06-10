@@ -65,10 +65,11 @@ export async function uploadListingImages(files: File[], listingId: string): Pro
 
 // ─── Saved listings ──────────────────────────────────────────────────────────
 
-export async function toggleSaveListing(listingId: string): Promise<boolean | null> {
+// Returns: true = saved, false = unsaved, 'unauthenticated' = not logged in, 'error' = DB error
+export async function toggleSaveListing(listingId: string): Promise<boolean | 'unauthenticated' | 'error'> {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
-  if (!user) return null;
+  if (!user) return 'unauthenticated';
 
   const { data: existing } = await supabase
     .from('saved_listings')
@@ -79,11 +80,11 @@ export async function toggleSaveListing(listingId: string): Promise<boolean | nu
 
   if (existing) {
     const { error } = await supabase.from('saved_listings').delete().eq('id', existing.id);
-    if (error) { console.error('unsave error:', error.message); return null; }
+    if (error) { console.error('unsave error:', error.message); return 'error'; }
     return false;
   } else {
     const { error } = await supabase.from('saved_listings').insert({ user_id: user.id, listing_id: listingId });
-    if (error) { console.error('save error:', error.message); return null; }
+    if (error) { console.error('save error:', error.message); return 'error'; }
     return true;
   }
 }

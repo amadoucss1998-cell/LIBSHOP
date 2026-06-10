@@ -41,10 +41,9 @@ export default function ListingCard({ listing, initialSaved = false }: Props) {
     setSaving(true);
 
     const result = await toggleSaveListing(listing.id);
-    if (result === null) {
-      // Not logged in — redirect to auth
+    if (result === 'unauthenticated') {
       router.push('/auth');
-    } else {
+    } else if (result !== 'error') {
       setSaved(result);
     }
     setSaving(false);
