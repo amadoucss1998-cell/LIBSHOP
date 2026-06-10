@@ -28,9 +28,8 @@ export default function AuthPage() {
         });
         if (signUpError) throw signUpError;
 
-        setMessage('Account created! Check your email to confirm your account, then sign in.');
-        setMode('login');
-        setPassword('');
+        router.push('/');
+        router.refresh();
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) throw signInError;
