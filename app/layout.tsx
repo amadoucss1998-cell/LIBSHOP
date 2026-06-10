@@ -8,8 +8,8 @@ import MessageNotifications from '@/components/MessageNotifications';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'theonline18 — Buy & sell near you',
-  description: 'Buy and sell second-hand items near you in Liberia.',
+  title: 'The Online 18 — Your last stop to buying & selling second hand items',
+  description: 'Your last stop to buying and selling second hand items.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

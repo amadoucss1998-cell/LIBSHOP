@@ -50,9 +50,9 @@ export default async function HomePage({
           {/* Hero banner */}
           <div className="mx-4 mt-3 rounded-2xl bg-gradient-to-br from-[#F7501F] to-[#FF8C5A] overflow-hidden relative">
             <div className="px-5 py-6">
-              <p className="text-white/80 text-xs font-semibold uppercase tracking-widest mb-1">Liberia&apos;s marketplace</p>
+              <p className="text-white/80 text-xs font-semibold uppercase tracking-widest mb-1">The Online 18</p>
               <h1 className="text-white text-2xl font-black leading-tight mb-3">
-                Buy &amp; sell<br />anything near you
+                Your last stop to buying<br />&amp; selling second hand items
               </h1>
               <Link
                 href="/listings/new"

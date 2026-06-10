@@ -78,7 +78,7 @@ export default function AuthPage() {
       {/* Logo */}
       <div className="pt-12 pb-8 text-center">
         <span className="text-4xl font-black text-[#F7501F] tracking-tight">theonline18</span>
-        <p className="text-[#888] text-sm mt-2">Buy & sell near you</p>
+        <p className="text-[#888] text-sm mt-2">Your last stop to buying and selling second hand items</p>
       </div>
 
       {/* Tabs */}
