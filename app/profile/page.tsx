@@ -10,11 +10,14 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [tab, setTab] = useState<'active' | 'sold'>('active');
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.push('/auth'); return; }
+
+      setIsAuthenticated(true);
 
       const [profileRes, listingsRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', data.user.id).single(),
@@ -52,8 +55,8 @@ export default function ProfilePage() {
     </div>
   );
 
-  // Not logged in
-  if (!profile) return (
+  // Not logged in (only show this if auth check confirmed no session)
+  if (!isAuthenticated && !loading) return (
     <div className="max-w-md mx-auto px-6 py-16 text-center">
       <div className="w-20 h-20 rounded-full bg-[#F5F5F5] flex items-center justify-center mx-auto mb-5">
         <svg className="w-10 h-10 text-[#ccc]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,6 +71,13 @@ export default function ProfilePage() {
       >
         Sign in / Join theonline18
       </button>
+    </div>
+  );
+
+  // Authenticated but profile row missing — show minimal fallback
+  if (!profile) return (
+    <div className="flex items-center justify-center py-24">
+      <div className="w-8 h-8 border-4 border-[#F7501F] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
