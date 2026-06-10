@@ -1,9 +1,7 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { toggleSaveListing } from '@/lib/supabase';
+import SaveButton from './SaveButton';
 import type { Listing } from '@/lib/types';
 
 function timeAgo(dateStr: string): string {
@@ -24,9 +22,6 @@ interface Props {
 }
 
 export default function ListingCard({ listing, initialSaved = false }: Props) {
-  const router = useRouter();
-  const [saved, setSaved] = useState(initialSaved);
-  const [saving, setSaving] = useState(false);
   const mainImage = listing.images?.[0];
   const isFree = listing.price === 0;
   const cat = (listing as any).categories;
@@ -35,45 +30,12 @@ export default function ListingCard({ listing, initialSaved = false }: Props) {
     ? 'Free'
     : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(listing.price);
 
-  const handleSave = async (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (saving) return;
-    setSaving(true);
-
-    const result = await toggleSaveListing(listing.id);
-    if (result === 'unauthenticated') {
-      router.push('/auth');
-    } else if (result !== 'error') {
-      setSaved(result);
-    }
-    setSaving(false);
-  };
-
   return (
-    // Wrapper: relative but NO overflow-hidden so the button isn't clipped
     <div className="relative bg-white rounded-xl shadow-sm">
 
-      {/* Heart button — rendered first in DOM, highest z-index */}
-      <button
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={handleSave}
-        disabled={saving}
-        className="absolute top-2 right-2 z-20 w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-md active:scale-90 transition-transform"
-        aria-label={saved ? 'Remove from saved' : 'Save item'}
-      >
-        <svg
-          className={`w-4 h-4 transition-colors ${saved ? 'text-[#F7501F]' : 'text-[#aaa]'}`}
-          fill={saved ? 'currentColor' : 'none'}
-          stroke="currentColor"
-          strokeWidth={2}
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        </svg>
-      </button>
+      {/* Save button sits OUTSIDE the Link, on top via z-20 */}
+      <SaveButton listingId={listing.id} initialSaved={initialSaved} />
 
-      {/* Card link — clipped separately from the button */}
       <Link href={`/listings/${listing.id}`} className="block rounded-xl overflow-hidden">
         {/* Image */}
         <div className="relative aspect-square bg-[#F5F5F5]">
