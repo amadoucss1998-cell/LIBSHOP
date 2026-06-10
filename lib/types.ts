@@ -22,7 +22,7 @@ export interface Listing {
   description: string;
   price: number;
   is_negotiable: boolean;
-  category_slug: string;
+  category_id: number;
   condition: 'New' | 'Like New' | 'Good' | 'Fair' | 'For Parts';
   location: string;
   county: string;
@@ -32,11 +32,9 @@ export interface Listing {
   view_count: number;
   created_at: string;
   updated_at: string;
-  // Denormalized seller fields
-  seller_name?: string;
-  seller_whatsapp?: string;
-  seller_phone?: string;
-  seller_location?: string;
+  // Joined fields
+  profiles?: Profile;
+  categories?: Category;
 }
 
 export type ListingCondition = 'New' | 'Like New' | 'Good' | 'Fair' | 'For Parts';

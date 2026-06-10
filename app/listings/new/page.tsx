@@ -1,19 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db, uploadListingImage } from '@/lib/firebase';
-import { CATEGORIES } from '@/lib/categories';
-import { LIBERIA_COUNTIES, type ListingCondition } from '@/lib/types';
+import { supabase, uploadListingImage } from '@/lib/supabase';
+import { LIBERIA_COUNTIES, type Category, type ListingCondition } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
 const CONDITIONS: ListingCondition[] = ['New', 'Like New', 'Good', 'Fair', 'For Parts'];
 
 export default function NewListingPage() {
   const router = useRouter();
+  const [categories, setCategories] = useState<Category[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
-  const [sellerProfile, setSellerProfile] = useState<{ full_name: string; whatsapp_number?: string; phone_number?: string; location?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -24,22 +21,20 @@ export default function NewListingPage() {
     description: '',
     price: '',
     is_negotiable: false,
-    category_slug: '',
+    category_id: '',
     condition: 'Good' as ListingCondition,
     location: 'Monrovia',
     county: 'Montserrado',
   });
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) { router.push('/auth'); return; }
-      setUserId(user.uid);
-      // Fetch seller profile for denormalization
-      const { doc, getDoc } = await import('firebase/firestore');
-      const snap = await getDoc(doc(db, 'profiles', user.uid));
-      if (snap.exists()) setSellerProfile(snap.data() as any);
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) { router.push('/auth'); return; }
+      setUserId(data.user.id);
     });
-    return () => unsub();
+    supabase.from('categories').select('*').order('name').then(({ data }) => {
+      setCategories(data ?? []);
+    });
   }, [router]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,31 +67,22 @@ export default function NewListingPage() {
         if (url) imageUrls.push(url);
       }
 
-      const now = new Date().toISOString();
-      await addDoc(collection(db, 'listings'), {
+      const { error: insertError } = await supabase.from('listings').insert({
+        id: listingId,
         seller_id: userId,
-        seller_name: sellerProfile?.full_name ?? '',
-        seller_whatsapp: sellerProfile?.whatsapp_number ?? '',
-        seller_phone: sellerProfile?.phone_number ?? '',
-        seller_location: sellerProfile?.location ?? 'Monrovia',
         title: form.title,
-        title_lower: form.title.toLowerCase(),
         description: form.description,
         price: parseFloat(form.price),
         is_negotiable: form.is_negotiable,
-        category_slug: form.category_slug,
+        category_id: parseInt(form.category_id),
         condition: form.condition,
         location: form.location,
         county: form.county,
         images: imageUrls,
-        is_sold: false,
-        is_active: true,
-        view_count: 0,
-        created_at: now,
-        updated_at: now,
       });
 
-      router.push('/');
+      if (insertError) throw insertError;
+      router.push(`/listings/${listingId}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to post listing. Try again.');
       setLoading(false);
@@ -193,13 +179,13 @@ export default function NewListingPage() {
             <label className="block text-sm font-semibold text-gray-700 mb-1">Category *</label>
             <select
               required
-              value={form.category_slug}
-              onChange={(e) => setForm({ ...form, category_slug: e.target.value })}
+              value={form.category_id}
+              onChange={(e) => setForm({ ...form, category_id: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#BF1F2E]"
             >
               <option value="">Select category...</option>
-              {CATEGORIES.map((c) => (
-                <option key={c.slug} value={c.slug}>{c.icon} {c.name}</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
               ))}
             </select>
           </div>

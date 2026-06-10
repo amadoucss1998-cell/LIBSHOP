@@ -1,12 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -25,29 +20,25 @@ export default function AuthPage() {
     setError('');
     setMessage('');
 
-    try {
-      if (mode === 'register') {
-        const { user } = await createUserWithEmailAndPassword(auth, email, password);
-        await setDoc(doc(db, 'profiles', user.uid), {
-          id: user.uid,
+    if (mode === 'register') {
+      const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+      if (signUpError) { setError(signUpError.message); setLoading(false); return; }
+
+      if (data.user) {
+        await supabase.from('profiles').insert({
+          id: data.user.id,
           full_name: fullName,
           phone_number: phone,
           whatsapp_number: phone,
-          location: 'Monrovia',
-          created_at: new Date().toISOString(),
         });
-        setMessage('Account created! You are now signed in.');
-        router.push('/');
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-        router.push('/');
+        setMessage('Account created! Check your email to confirm.');
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Something went wrong.';
-      setError(msg.replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim());
-    } finally {
-      setLoading(false);
+    } else {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) { setError(signInError.message); setLoading(false); return; }
+      router.push('/');
     }
+    setLoading(false);
   };
 
   return (

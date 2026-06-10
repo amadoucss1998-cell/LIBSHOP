@@ -1,9 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, orderBy, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import ListingCard from '@/components/ListingCard';
 import type { Listing, Profile } from '@/lib/types';
 
@@ -15,33 +13,31 @@ export default function ProfilePage() {
   const [tab, setTab] = useState<'active' | 'sold'>('active');
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) { router.push('/auth'); return; }
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) { router.push('/auth'); return; }
 
-      const [profileSnap, listingsSnap] = await Promise.all([
-        getDoc(doc(db, 'profiles', user.uid)),
-        getDocs(query(
-          collection(db, 'listings'),
-          where('seller_id', '==', user.uid),
-          orderBy('created_at', 'desc'),
-        )),
+      const [profileRes, listingsRes] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', data.user.id).single(),
+        supabase.from('listings')
+          .select('*, categories(name, icon, slug)')
+          .eq('seller_id', data.user.id)
+          .order('created_at', { ascending: false }),
       ]);
 
-      setProfile(profileSnap.data() as Profile ?? null);
-      setListings(listingsSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Listing)));
+      setProfile(profileRes.data);
+      setListings(listingsRes.data ?? []);
       setLoading(false);
     });
-    return () => unsub();
   }, [router]);
 
   const markSold = async (id: string) => {
-    await updateDoc(doc(db, 'listings', id), { is_sold: true });
+    await supabase.from('listings').update({ is_sold: true }).eq('id', id);
     setListings((prev) => prev.map((l) => l.id === id ? { ...l, is_sold: true } : l));
   };
 
   const deleteListing = async (id: string) => {
     if (!confirm('Delete this listing?')) return;
-    await updateDoc(doc(db, 'listings', id), { is_active: false });
+    await supabase.from('listings').update({ is_active: false }).eq('id', id);
     setListings((prev) => prev.filter((l) => l.id !== id));
   };
 
@@ -53,7 +49,6 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
-      {/* Profile Header */}
       <div className="card p-5 mb-5 flex items-center gap-4">
         <div className="w-16 h-16 rounded-full bg-[#BF1F2E]/10 flex items-center justify-center text-3xl">
           👤
@@ -67,7 +62,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 gap-3 mb-5">
         <div className="card p-4 text-center">
           <p className="text-3xl font-bold text-[#BF1F2E]">{activeListing.length}</p>
@@ -86,7 +80,6 @@ export default function ProfilePage() {
         + Post New Ad
       </button>
 
-      {/* Tabs */}
       <div className="flex rounded-lg bg-gray-100 p-1 mb-4">
         {(['active', 'sold'] as const).map((t) => (
           <button

@@ -1,57 +1,29 @@
-'use client';
-import { useEffect, useState } from 'react';
-import { useParams, notFound } from 'next/navigation';
-import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { getCategoryBySlug } from '@/lib/categories';
+import { supabase } from '@/lib/supabase';
+import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { Listing } from '@/lib/types';
 
-export default function ListingDetailPage() {
-  const params = useParams();
-  const id = params.id as string;
-  const [listing, setListing] = useState<Listing | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFoundState, setNotFoundState] = useState(false);
+export default async function ListingDetailPage({ params }: { params: { id: string } }) {
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('*, profiles(full_name, whatsapp_number, phone_number, location, created_at), categories(name, icon)')
+    .eq('id', params.id)
+    .single();
 
-  useEffect(() => {
-    async function fetchListing() {
-      const snap = await getDoc(doc(db, 'listings', id));
-      if (!snap.exists()) { setNotFoundState(true); setLoading(false); return; }
+  if (!listing) notFound();
 
-      const data = { id: snap.id, ...snap.data() } as Listing;
-      setListing(data);
-      setLoading(false);
+  await supabase.from('listings').update({ view_count: listing.view_count + 1 }).eq('id', params.id);
 
-      // Increment view count
-      await updateDoc(doc(db, 'listings', id), { view_count: increment(1) });
-    }
-    fetchListing();
-  }, [id]);
-
-  if (loading) return (
-    <div className="max-w-3xl mx-auto px-4 py-6 animate-pulse space-y-4">
-      <div className="h-4 bg-gray-200 rounded w-24" />
-      <div className="aspect-video rounded-xl bg-gray-200" />
-      <div className="h-8 bg-gray-200 rounded w-3/4" />
-      <div className="h-6 bg-gray-200 rounded w-1/4" />
-    </div>
-  );
-
-  if (notFoundState || !listing) return (
-    <div className="max-w-3xl mx-auto px-4 py-20 text-center text-gray-400">
-      <p className="text-4xl mb-3">🔍</p>
-      <p className="font-medium">Listing not found</p>
-      <Link href="/" className="text-[#BF1F2E] text-sm mt-2 inline-block">← Back to listings</Link>
-    </div>
-  );
-
-  const category = getCategoryBySlug(listing.category_slug);
+  const seller = (listing as any).profiles;
+  const category = (listing as any).categories;
 
   const formattedPrice = new Intl.NumberFormat('en-US', {
     style: 'currency', currency: 'USD', maximumFractionDigits: 0
   }).format(listing.price);
+
+  const memberSince = seller?.created_at
+    ? new Date(seller.created_at).getFullYear()
+    : '—';
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
@@ -67,7 +39,7 @@ export default function ListingDetailPage() {
           </div>
           {listing.images.length > 1 && (
             <div className="flex gap-2 overflow-x-auto">
-              {listing.images.slice(1).map((img, i) => (
+              {listing.images.slice(1).map((img: string, i: number) => (
                 <div key={i} className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
                   <Image src={img} alt={`${listing.title} ${i + 2}`} fill className="object-cover" />
                 </div>
@@ -125,8 +97,8 @@ export default function ListingDetailPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-400 mb-0.5">Seller</p>
-              <p className="font-semibold text-gray-800">{listing.seller_name ?? 'Anonymous'}</p>
-              <p className="text-xs text-gray-400 mt-0.5">📍 {listing.seller_location}</p>
+              <p className="font-semibold text-gray-800">{seller?.full_name ?? 'Anonymous'}</p>
+              <p className="text-xs text-gray-400 mt-0.5">📍 {seller?.location} · Member since {memberSince}</p>
             </div>
             <div className="w-12 h-12 rounded-full bg-[#BF1F2E]/10 flex items-center justify-center text-2xl">
               👤
@@ -134,9 +106,9 @@ export default function ListingDetailPage() {
           </div>
 
           <div className="mt-4 flex gap-3">
-            {listing.seller_whatsapp && (
+            {seller?.whatsapp_number && (
               <a
-                href={`https://wa.me/${listing.seller_whatsapp.replace(/\D/g, '')}?text=Hi! I'm interested in your listing: ${encodeURIComponent(listing.title)} on LibMarket.`}
+                href={`https://wa.me/${seller.whatsapp_number.replace(/\D/g, '')}?text=Hi! I'm interested in your listing: ${encodeURIComponent(listing.title)} on LibMarket.`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition-colors"
@@ -144,9 +116,9 @@ export default function ListingDetailPage() {
                 <span>💬</span> WhatsApp Seller
               </a>
             )}
-            {listing.seller_phone && (
+            {seller?.phone_number && (
               <a
-                href={`tel:${listing.seller_phone}`}
+                href={`tel:${seller.phone_number}`}
                 className="flex items-center justify-center gap-2 bg-[#0B3D91] hover:bg-[#082d6b] text-white font-semibold py-3 px-5 rounded-xl transition-colors"
               >
                 📞 Call
