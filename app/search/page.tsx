@@ -19,6 +19,18 @@ function SearchContent() {
   const [maxPrice, setMaxPrice] = useState('');
   const [condition, setCondition] = useState<ListingCondition | ''>('');
   const [hasMore, setHasMore] = useState(false);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: saved } = await supabase
+        .from('saved_listings')
+        .select('listing_id')
+        .eq('user_id', data.user.id);
+      if (saved) setSavedIds(new Set(saved.map((s: { listing_id: string }) => s.listing_id)));
+    });
+  }, []);
 
   const PAGE_SIZE = 20;
 
@@ -176,7 +188,7 @@ function SearchContent() {
             <>
               <div className="grid grid-cols-2 gap-2 px-4">
                 {listings.map((listing) => (
-                  <ListingCard key={listing.id} listing={listing} />
+                  <ListingCard key={listing.id} listing={listing} initialSaved={savedIds.has(listing.id)} />
                 ))}
               </div>
               {hasMore && (

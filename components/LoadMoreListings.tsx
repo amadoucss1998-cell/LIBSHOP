@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import ListingCard from './ListingCard';
 import type { Listing } from '@/lib/types';
@@ -15,6 +15,19 @@ export default function LoadMoreListings({ initialListings, categoryId }: Props)
   const [listings, setListings] = useState<Listing[]>(initialListings);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialListings.length >= PAGE_SIZE);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+
+  // Load the current user's saved listing IDs on mount
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: saved } = await supabase
+        .from('saved_listings')
+        .select('listing_id')
+        .eq('user_id', data.user.id);
+      if (saved) setSavedIds(new Set(saved.map((s: { listing_id: string }) => s.listing_id)));
+    });
+  }, []);
 
   const loadMore = async () => {
     if (loading || !hasMore) return;
@@ -43,7 +56,11 @@ export default function LoadMoreListings({ initialListings, categoryId }: Props)
     <>
       <div className="grid grid-cols-2 gap-2 px-4">
         {listings.map((listing) => (
-          <ListingCard key={listing.id} listing={listing} />
+          <ListingCard
+            key={listing.id}
+            listing={listing}
+            initialSaved={savedIds.has(listing.id)}
+          />
         ))}
       </div>
 
