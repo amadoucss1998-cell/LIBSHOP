@@ -67,21 +67,23 @@ export async function uploadListingImages(files: File[], listingId: string): Pro
 
 export async function toggleSaveListing(listingId: string): Promise<boolean | null> {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null; // not logged in
+  if (!user) return null;
 
   const { data: existing } = await supabase
     .from('saved_listings')
     .select('id')
     .eq('user_id', user.id)
     .eq('listing_id', listingId)
-    .single();
+    .maybeSingle();
 
   if (existing) {
-    await supabase.from('saved_listings').delete().eq('id', existing.id);
-    return false; // now unsaved
+    const { error } = await supabase.from('saved_listings').delete().eq('id', existing.id);
+    if (error) { console.error('unsave error:', error.message); return null; }
+    return false;
   } else {
-    await supabase.from('saved_listings').insert({ user_id: user.id, listing_id: listingId });
-    return true; // now saved
+    const { error } = await supabase.from('saved_listings').insert({ user_id: user.id, listing_id: listingId });
+    if (error) { console.error('save error:', error.message); return null; }
+    return true;
   }
 }
 
