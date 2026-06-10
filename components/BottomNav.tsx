@@ -24,10 +24,11 @@ export default function BottomNav() {
     if (!isLoggedIn) { setUnreadCount(0); return; }
 
     let userId: string;
+    let cancelled = false;
 
-    const loadUnread = async () => {
+    const queryUnread = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || cancelled) return;
       userId = user.id;
 
       const { data: convs } = await supabase
@@ -35,7 +36,7 @@ export default function BottomNav() {
         .select('id')
         .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`);
 
-      if (!convs?.length) { setUnreadCount(0); return; }
+      if (!convs?.length || cancelled) { setUnreadCount(0); return; }
 
       const convIds = convs.map((c: { id: string }) => c.id);
       const { count } = await supabase
@@ -45,18 +46,24 @@ export default function BottomNav() {
         .eq('is_read', false)
         .neq('sender_id', userId);
 
-      setUnreadCount(count ?? 0);
+      if (!cancelled) setUnreadCount(count ?? 0);
     };
 
-    loadUnread();
+    // When inside a chat, delay so the page has time to mark messages as read
+    const delay = pathname.startsWith('/chats/') ? 800 : 0;
+    const timer = setTimeout(queryUnread, delay);
 
     const channel = supabase
       .channel('unread_badge')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, loadUnread)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, loadUnread)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, queryUnread)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, queryUnread)
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
   }, [isLoggedIn, pathname]);
 
   const active = (path: string) => pathname === path;
