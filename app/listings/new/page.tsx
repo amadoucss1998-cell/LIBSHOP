@@ -226,17 +226,29 @@ export default function NewListingPage() {
         {/* Category */}
         <div>
           <label className="block text-[#888] text-xs font-semibold uppercase tracking-wider mb-2">Category *</label>
-          <select
-            required
-            value={form.category_id}
-            onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-            className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3 text-[#222] text-sm focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30 appearance-none"
-          >
-            <option value="">Select a category...</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-            ))}
-          </select>
+          {categories.length === 0 ? (
+            <p className="text-[#bbb] text-sm bg-[#F5F5F5] rounded-xl px-4 py-3">Loading categories…</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, category_id: String(c.id) })}
+                  className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border text-center transition-colors ${
+                    form.category_id === String(c.id)
+                      ? 'bg-[#F7501F]/10 border-[#F7501F] text-[#F7501F]'
+                      : 'bg-[#F5F5F5] border-transparent text-[#444]'
+                  }`}
+                >
+                  <span className="text-2xl">{c.icon}</span>
+                  <span className="text-[11px] font-semibold leading-tight">{c.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {/* hidden required input to trigger form validation */}
+          <input type="text" required value={form.category_id} onChange={() => {}} className="sr-only" aria-hidden="true" />
         </div>
 
         {/* Condition */}
