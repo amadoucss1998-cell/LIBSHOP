@@ -8,6 +8,7 @@ export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -18,6 +19,47 @@ export default function BottomNav() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  // Track unread message count
+  useEffect(() => {
+    if (!isLoggedIn) { setUnreadCount(0); return; }
+
+    let userId: string;
+
+    const loadUnread = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      userId = user.id;
+
+      const { data: convs } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`);
+
+      if (!convs?.length) return;
+
+      const convIds = convs.map((c: { id: string }) => c.id);
+      const { count } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .in('conversation_id', convIds)
+        .eq('is_read', false)
+        .neq('sender_id', userId);
+
+      setUnreadCount(count ?? 0);
+    };
+
+    loadUnread();
+
+    // Refresh badge on new messages
+    const channel = supabase
+      .channel('unread_badge')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, loadUnread)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, loadUnread)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isLoggedIn]);
 
   const active = (path: string) => pathname === path;
 
@@ -51,9 +93,16 @@ export default function BottomNav() {
         {/* Chats — only when logged in */}
         {isLoggedIn ? (
           <Link href="/chats" className="flex flex-col items-center gap-1 min-w-[48px]">
-            <svg className={`w-6 h-6 ${active('/chats') || pathname.startsWith('/chats/') ? 'text-[#F7501F]' : 'text-[#888]'}`} fill={active('/chats') || pathname.startsWith('/chats/') ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
+            <div className="relative">
+              <svg className={`w-6 h-6 ${active('/chats') || pathname.startsWith('/chats/') ? 'text-[#F7501F]' : 'text-[#888]'}`} fill={active('/chats') || pathname.startsWith('/chats/') ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#F7501F] text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </div>
             <span className={`text-[10px] font-semibold ${active('/chats') || pathname.startsWith('/chats/') ? 'text-[#F7501F]' : 'text-[#888]'}`}>Chats</span>
           </Link>
         ) : null}
