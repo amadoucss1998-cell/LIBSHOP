@@ -23,4 +23,12 @@ body {
   .card {
     @apply bg-white rounded-xl overflow-hidden;
   }
+  /* Hide scrollbar across browsers */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

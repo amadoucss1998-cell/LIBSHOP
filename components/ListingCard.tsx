@@ -1,7 +1,9 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase, toggleSaveListing } from '@/lib/supabase';
 import type { Listing } from '@/lib/types';
 
 function timeAgo(dateStr: string): string {
@@ -16,16 +18,37 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function ListingCard({ listing }: { listing: Listing }) {
-  const [saved, setSaved] = useState(false);
+interface Props {
+  listing: Listing;
+  initialSaved?: boolean;
+}
+
+export default function ListingCard({ listing, initialSaved = false }: Props) {
+  const router = useRouter();
+  const [saved, setSaved] = useState(initialSaved);
+  const [saving, setSaving] = useState(false);
   const mainImage = listing.images?.[0];
   const isFree = listing.price === 0;
+  const cat = (listing as any).categories;
 
   const formattedPrice = isFree
     ? 'Free'
     : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(listing.price);
 
-  const cat = (listing as any).categories;
+  const handleSave = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (saving) return;
+    setSaving(true);
+
+    const result = await toggleSaveListing(listing.id);
+    if (result === null) {
+      // Not logged in — redirect to auth
+      router.push('/auth');
+    } else {
+      setSaved(result);
+    }
+    setSaving(false);
+  };
 
   return (
     <div className="relative bg-white rounded-xl overflow-hidden shadow-sm">
@@ -46,15 +69,14 @@ export default function ListingCard({ listing }: { listing: Listing }) {
             </div>
           )}
 
-          {/* SOLD overlay */}
           {listing.is_sold && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
               <span className="bg-white text-[#222] font-black text-sm px-3 py-1 rounded uppercase tracking-wider">Sold</span>
             </div>
           )}
 
-          {/* Price badge — bottom left */}
-          <div className="absolute bottom-0 left-0 right-0 px-2 py-2 bg-gradient-to-t from-black/60 to-transparent">
+          {/* Price overlay */}
+          <div className="absolute bottom-0 left-0 right-0 px-2.5 py-2 bg-gradient-to-t from-black/65 to-transparent">
             <span className={`font-black text-white text-base leading-none ${isFree ? 'text-[#4CD964]' : ''}`}>
               {formattedPrice}
             </span>
@@ -73,14 +95,15 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         </div>
       </Link>
 
-      {/* Heart / Save button */}
+      {/* Heart / Save */}
       <button
-        onClick={(e) => { e.preventDefault(); setSaved(!saved); }}
-        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow-sm"
-        aria-label="Save item"
+        onClick={handleSave}
+        disabled={saving}
+        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow-sm transition-transform active:scale-90"
+        aria-label={saved ? 'Remove from saved' : 'Save item'}
       >
         <svg
-          className={`w-4 h-4 ${saved ? 'text-[#F7501F] fill-current' : 'text-[#888]'}`}
+          className={`w-4 h-4 transition-colors ${saved ? 'text-[#F7501F]' : 'text-[#888]'}`}
           fill={saved ? 'currentColor' : 'none'}
           stroke="currentColor"
           viewBox="0 0 24 24"

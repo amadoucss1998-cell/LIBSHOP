@@ -1,8 +1,10 @@
 import { supabase } from '@/lib/supabase';
-import ListingGrid from '@/components/ListingGrid';
 import CategoryBar from '@/components/CategoryBar';
+import LoadMoreListings from '@/components/LoadMoreListings';
 
-export const revalidate = 60;
+export const revalidate = 30;
+
+const PAGE_SIZE = 20;
 
 export default async function HomePage({
   searchParams,
@@ -18,7 +20,7 @@ export default async function HomePage({
       .select('id')
       .eq('slug', categorySlug)
       .single();
-    categoryId = cat?.id ?? null;
+    if (cat) categoryId = cat.id;
   }
 
   let query = supabase
@@ -27,7 +29,7 @@ export default async function HomePage({
     .eq('is_active', true)
     .eq('is_sold', false)
     .order('created_at', { ascending: false })
-    .limit(40);
+    .limit(PAGE_SIZE);
 
   if (categoryId) query = query.eq('category_id', categoryId);
 
@@ -35,7 +37,7 @@ export default async function HomePage({
   const { data: categories, error: categoriesError } = await supabase
     .from('categories')
     .select('*')
-    .order('name');
+    .order('sort_order');
 
   const dbError = listingsError || categoriesError;
 
@@ -54,17 +56,19 @@ export default async function HomePage({
         </div>
       ) : (
         <>
-          {/* Section header */}
           <div className="px-4 py-3 flex items-center justify-between">
             <h2 className="text-[#222] font-bold text-base">
               {categorySlug
-                ? `${categories?.find(c => c.slug === categorySlug)?.name ?? ''}`
+                ? categories?.find(c => c.slug === categorySlug)?.name ?? 'Listings'
                 : 'Items near you'}
             </h2>
-            <span className="text-[#888] text-sm">{listings?.length ?? 0} items</span>
+            <span className="text-[#888] text-sm">{listings?.length ?? 0}{(listings?.length ?? 0) >= PAGE_SIZE ? '+' : ''} items</span>
           </div>
 
-          <ListingGrid listings={listings ?? []} />
+          <LoadMoreListings
+            initialListings={listings ?? []}
+            categoryId={categoryId}
+          />
         </>
       )}
     </div>

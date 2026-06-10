@@ -20,31 +20,62 @@ export default function AuthPage() {
     setError('');
     setMessage('');
 
-    if (mode === 'register') {
-      const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
-      if (signUpError) { setError(signUpError.message); setLoading(false); return; }
+    try {
+      if (mode === 'register') {
+        const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+        if (signUpError) throw signUpError;
 
-      if (data.user) {
-        await supabase.from('profiles').insert({
-          id: data.user.id,
-          full_name: fullName,
-          phone_number: phone,
-          whatsapp_number: phone,
-        });
-        setMessage('Account created! Check your email to confirm, then sign in.');
+        if (data.user) {
+          const { error: profileError } = await supabase.from('profiles').insert({
+            id: data.user.id,
+            full_name: fullName.trim(),
+            phone_number: phone.trim() || null,
+            whatsapp_number: phone.trim() || null,
+          });
+
+          if (profileError) {
+            // Profile failed — clean up the orphaned auth user
+            await supabase.auth.admin?.deleteUser?.(data.user.id).catch(() => {});
+            throw new Error('Failed to create profile. Please try again.');
+          }
+
+          setMessage('Account created! Check your email to confirm your account, then sign in.');
+          setMode('login');
+          setPassword('');
+        }
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) throw signInError;
+        router.push('/');
+        router.refresh();
       }
-    } else {
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      if (signInError) { setError(signInError.message); setLoading(false); return; }
-      router.push('/');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      // Friendlier messages for common auth errors
+      if (msg.includes('Invalid login credentials')) {
+        setError('Incorrect email or password.');
+      } else if (msg.includes('Email not confirmed')) {
+        setError('Please confirm your email first. Check your inbox for a verification link.');
+      } else if (msg.includes('already registered')) {
+        setError('An account with this email already exists. Sign in instead.');
+      } else {
+        setError(msg);
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const switchMode = (m: 'login' | 'register') => {
+    setMode(m);
+    setError('');
+    setMessage('');
   };
 
   return (
     <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto px-6">
 
-      {/* Logo area */}
+      {/* Logo */}
       <div className="pt-12 pb-8 text-center">
         <span className="text-4xl font-black text-[#F7501F] tracking-tight">letgo</span>
         <p className="text-[#888] text-sm mt-2">Buy & sell near you</p>
@@ -55,7 +86,8 @@ export default function AuthPage() {
         {(['login', 'register'] as const).map((m) => (
           <button
             key={m}
-            onClick={() => { setMode(m); setError(''); setMessage(''); }}
+            type="button"
+            onClick={() => switchMode(m)}
             className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-colors ${
               mode === m ? 'bg-white text-[#222] shadow-sm' : 'text-[#888]'
             }`}
@@ -71,6 +103,8 @@ export default function AuthPage() {
             <input
               type="text"
               required
+              minLength={2}
+              maxLength={80}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Full name"
@@ -80,7 +114,7 @@ export default function AuthPage() {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="WhatsApp number (e.g. +231 XXX XXXX)"
+              placeholder="WhatsApp number (e.g. +231 770 123 456)"
               className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3.5 text-[#222] text-sm placeholder-[#bbb] focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30"
             />
           </>
@@ -98,10 +132,10 @@ export default function AuthPage() {
         <input
           type="password"
           required
+          minLength={8}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password (min. 8 characters)"
-          minLength={8}
           className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3.5 text-[#222] text-sm placeholder-[#bbb] focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30"
         />
 
@@ -128,7 +162,8 @@ export default function AuthPage() {
       <p className="text-center text-[#bbb] text-xs py-8">
         {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
         <button
-          onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
+          type="button"
+          onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
           className="text-[#F7501F] font-semibold"
         >
           {mode === 'login' ? 'Join letgo' : 'Sign in'}
