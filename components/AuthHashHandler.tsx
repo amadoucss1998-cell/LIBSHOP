@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 // Handles Supabase implicit-flow OAuth tokens delivered as hash fragments to the root URL.
+// Supabase processes the hash synchronously on init (before React mounts), so we poll
+// getSession() rather than listening for the auth state change event.
 export default function AuthHashHandler() {
   const router = useRouter();
 
@@ -11,17 +13,21 @@ export default function AuthHashHandler() {
     if (typeof window === 'undefined') return;
     if (!window.location.hash.includes('access_token')) return;
 
-    // Supabase client auto-parses the hash; wait for the session to settle then clean up.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts++;
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        subscription.unsubscribe();
-        // Remove the hash from the URL and stay on home
+        clearInterval(interval);
         window.history.replaceState(null, '', '/');
-        router.refresh();
+        router.replace('/');
+      } else if (attempts >= 10) {
+        clearInterval(interval);
+        router.replace('/auth?error=oauth');
       }
-    });
+    }, 300);
 
-    return () => subscription.unsubscribe();
+    return () => clearInterval(interval);
   }, [router]);
 
   return null;
