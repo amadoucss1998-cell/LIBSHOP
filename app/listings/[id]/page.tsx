@@ -7,6 +7,7 @@ import ListingActions from '@/components/ListingActions';
 import ReportButton from '@/components/ReportButton';
 import StartChatButton from '@/components/StartChatButton';
 import SaveButton from '@/components/SaveButton';
+import ImageGallery from '@/components/ImageGallery';
 
 export default async function ListingDetailPage({ params }: { params: { id: string } }) {
   const { data: listing } = await supabase
@@ -85,27 +86,13 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
 
         {/* Image Gallery */}
         {listing.images && listing.images.length > 0 ? (
-          <div>
-            <div className="relative aspect-square bg-[#F5F5F5]">
-              <Image src={listing.images[0]} alt={listing.title} fill className="object-cover" priority />
-              {listing.is_sold && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                  <span className="bg-white text-[#222] font-black text-lg px-5 py-2 rounded uppercase tracking-wider">Sold</span>
-                </div>
-              )}
-            </div>
-            {listing.images.length > 1 && (
-              <div className="flex gap-2 px-4 py-3 overflow-x-auto bg-white scrollbar-hide">
-                {listing.images.map((img: string, i: number) => (
-                  <div key={i} className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-[#F5F5F5]">
-                    <Image src={img} alt={`Photo ${i + 1}`} fill className="object-cover" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ImageGallery
+            images={listing.images}
+            title={listing.title}
+            isSold={listing.is_sold}
+          />
         ) : (
-          <div className="aspect-square bg-[#F5F5F5] flex items-center justify-center text-7xl">
+          <div className="mx-4 mt-3 rounded-2xl bg-[#F5F5F5] flex items-center justify-center text-7xl" style={{ aspectRatio: '4/3' }}>
             {category?.icon ?? '📦'}
           </div>
         )}
