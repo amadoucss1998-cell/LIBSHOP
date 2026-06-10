@@ -1,61 +1,25 @@
 'use client';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { Suspense } from 'react';
 
-export default function AuthCallbackPage() {
-  const router = useRouter();
+function CallbackHandler() {
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const run = async () => {
-      // Give Supabase a tick to process the hash fragment if present
-      await new Promise((r) => setTimeout(r, 500));
-
+    // PKCE flow: Supabase sends ?code= to this URL
+    // The Supabase client auto-exchanges the code on init; just wait and redirect.
+    const timer = setTimeout(async () => {
       const { data: { session } } = await supabase.auth.getSession();
-
       if (session) {
-        // Ensure profile row exists for first Google sign-in
-        const { data: existing } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (!existing) {
-          const name =
-            session.user.user_metadata?.full_name ||
-            session.user.user_metadata?.name ||
-            session.user.email?.split('@')[0] ||
-            'User';
-
-          await supabase.from('profiles').insert({
-            id: session.user.id,
-            full_name: name,
-            avatar_url: session.user.user_metadata?.avatar_url ?? null,
-          });
-        }
-
-        // Hard redirect so the whole app re-initialises with the new session
-        window.location.replace('/');
+        window.location.href = '/';
       } else {
-        // Still no session — wait for auth state change (handles slow networks)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-          if (s) {
-            subscription.unsubscribe();
-            window.location.replace('/');
-          }
-        });
-
-        // Timeout fallback after 10 s
-        setTimeout(() => {
-          subscription.unsubscribe();
-          window.location.replace('/auth?error=oauth');
-        }, 10000);
+        window.location.href = '/auth?error=oauth';
       }
-    };
-
-    run();
-  }, []);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [searchParams]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -65,4 +29,8 @@ export default function AuthCallbackPage() {
       </div>
     </div>
   );
+}
+
+export default function AuthCallbackPage() {
+  return <Suspense><CallbackHandler /></Suspense>;
 }

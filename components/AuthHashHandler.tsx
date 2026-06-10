@@ -1,45 +1,47 @@
 'use client';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-// lib/supabase.ts sets 'oauth_redirect' in sessionStorage before the Supabase client
-// clears the hash. We check that flag here and redirect once the session is ready.
+async function ensureProfile(userId: string, userMeta: Record<string, string>) {
+  const { data } = await supabase.from('profiles').select('id').eq('id', userId).maybeSingle();
+  if (!data) {
+    await supabase.from('profiles').insert({
+      id: userId,
+      full_name: userMeta.full_name || userMeta.name || 'User',
+      avatar_url: userMeta.avatar_url ?? null,
+    });
+  }
+}
+
 export default function AuthHashHandler() {
-  const router = useRouter();
-
   useEffect(() => {
-    if (!sessionStorage.getItem('oauth_redirect')) return;
-    sessionStorage.removeItem('oauth_redirect');
+    if (!sessionStorage.getItem('supabase_oauth')) return;
+    sessionStorage.removeItem('supabase_oauth');
 
-    // Session is already stored in localStorage by the time we get here.
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return; // shouldn't happen, but bail gracefully
+    const handle = async () => {
+      // Try immediately (session likely already in localStorage)
+      let { data: { session } } = await supabase.auth.getSession();
 
-      // Create profile row on first Google sign-in
-      const { data: existing } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (!existing) {
-        const name =
-          session.user.user_metadata?.full_name ||
-          session.user.user_metadata?.name ||
-          session.user.email?.split('@')[0] ||
-          'User';
-        await supabase.from('profiles').insert({
-          id: session.user.id,
-          full_name: name,
-          avatar_url: session.user.user_metadata?.avatar_url ?? null,
+      // If not ready yet, wait for the auth state change
+      if (!session) {
+        await new Promise<void>((resolve) => {
+          const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+            if (s) { subscription.unsubscribe(); session = s; resolve(); }
+          });
+          // Timeout after 8s
+          setTimeout(() => { subscription.unsubscribe(); resolve(); }, 8000);
         });
       }
 
-      // Hard reload so the whole app boots with the fresh session
-      window.location.replace('/');
-    });
-  }, [router]);
+      if (!session) { window.location.href = '/auth?error=oauth'; return; }
+
+      await ensureProfile(session.user.id, session.user.user_metadata);
+      // Navigate to home — use href so the full app re-boots with the session
+      window.location.href = '/';
+    };
+
+    handle();
+  }, []);
 
   return null;
 }
