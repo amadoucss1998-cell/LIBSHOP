@@ -26,6 +26,8 @@ create table if not exists categories (
   sort_order integer default 99
 );
 
+alter table categories add column if not exists sort_order integer default 99;
+
 insert into categories (name, icon, slug, sort_order) values
   ('Electronics', '📱', 'electronics', 1),
   ('Vehicles',    '🚗', 'vehicles',    2),
