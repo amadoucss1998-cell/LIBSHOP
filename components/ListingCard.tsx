@@ -1,9 +1,9 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase, toggleSaveListing } from '@/lib/supabase';
+import { toggleSaveListing } from '@/lib/supabase';
 import type { Listing } from '@/lib/types';
 
 function timeAgo(dateStr: string): string {
@@ -35,8 +35,9 @@ export default function ListingCard({ listing, initialSaved = false }: Props) {
     ? 'Free'
     : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(listing.price);
 
-  const handleSave = async (e: React.MouseEvent) => {
+  const handleSave = async (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (saving) return;
     setSaving(true);
 
@@ -50,8 +51,30 @@ export default function ListingCard({ listing, initialSaved = false }: Props) {
   };
 
   return (
-    <div className="relative bg-white rounded-xl overflow-hidden shadow-sm">
-      <Link href={`/listings/${listing.id}`} className="block">
+    // Wrapper: relative but NO overflow-hidden so the button isn't clipped
+    <div className="relative bg-white rounded-xl shadow-sm">
+
+      {/* Heart button — rendered first in DOM, highest z-index */}
+      <button
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={handleSave}
+        disabled={saving}
+        className="absolute top-2 right-2 z-20 w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-md active:scale-90 transition-transform"
+        aria-label={saved ? 'Remove from saved' : 'Save item'}
+      >
+        <svg
+          className={`w-4 h-4 transition-colors ${saved ? 'text-[#F7501F]' : 'text-[#aaa]'}`}
+          fill={saved ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        </svg>
+      </button>
+
+      {/* Card link — clipped separately from the button */}
+      <Link href={`/listings/${listing.id}`} className="block rounded-xl overflow-hidden">
         {/* Image */}
         <div className="relative aspect-square bg-[#F5F5F5]">
           {mainImage ? (
@@ -93,23 +116,6 @@ export default function ListingCard({ listing, initialSaved = false }: Props) {
           </p>
         </div>
       </Link>
-
-      {/* Heart / Save */}
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow-sm transition-transform active:scale-90"
-        aria-label={saved ? 'Remove from saved' : 'Save item'}
-      >
-        <svg
-          className={`w-4 h-4 transition-colors ${saved ? 'text-[#F7501F]' : 'text-[#888]'}`}
-          fill={saved ? 'currentColor' : 'none'}
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        </svg>
-      </button>
     </div>
   );
 }
