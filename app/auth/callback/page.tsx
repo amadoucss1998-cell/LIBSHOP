@@ -7,14 +7,14 @@ export default function AuthCallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Handle both PKCE (?code=) and implicit (#access_token=) flows
-    const handleCallback = async () => {
-      // Supabase client auto-processes #access_token hash fragments on init.
-      // Just wait briefly for the session to be established, then redirect.
+    const run = async () => {
+      // Give Supabase a tick to process the hash fragment if present
+      await new Promise((r) => setTimeout(r, 500));
+
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session) {
-        // Ensure profile row exists (first Google sign-in)
+        // Ensure profile row exists for first Google sign-in
         const { data: existing } = await supabase
           .from('profiles')
           .select('id')
@@ -35,23 +35,27 @@ export default function AuthCallbackPage() {
           });
         }
 
-        router.replace('/');
+        // Hard redirect so the whole app re-initialises with the new session
+        window.location.replace('/');
       } else {
-        // No session yet — wait for Supabase to process the hash
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
+        // Still no session — wait for auth state change (handles slow networks)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
           if (s) {
             subscription.unsubscribe();
-            router.replace('/');
+            window.location.replace('/');
           }
         });
 
-        // Timeout fallback
-        setTimeout(() => router.replace('/auth?error=oauth'), 8000);
+        // Timeout fallback after 10 s
+        setTimeout(() => {
+          subscription.unsubscribe();
+          window.location.replace('/auth?error=oauth');
+        }, 10000);
       }
     };
 
-    handleCallback();
-  }, [router]);
+    run();
+  }, []);
 
   return (
     <div className="flex items-center justify-center min-h-screen">
