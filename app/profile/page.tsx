@@ -95,9 +95,12 @@ export default function ProfilePage() {
           </div>
           <button
             onClick={handleSignOut}
-            className="text-[#888] text-sm font-semibold border border-[#E8E8E8] rounded-full px-4 py-1.5"
+            className="flex items-center gap-1.5 text-[#E74C3C] text-sm font-semibold border border-[#FFD0D0] bg-[#FFF5F5] rounded-full px-4 py-1.5"
           >
-            Sign out
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Log out
           </button>
         </div>
 
@@ -173,6 +176,18 @@ export default function ProfilePage() {
           ))}
         </div>
       )}
+      {/* Logout button at bottom */}
+      <div className="px-4 py-4">
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center justify-center gap-2 bg-[#FFF5F5] border border-[#FFD0D0] text-[#E74C3C] font-bold py-3.5 rounded-xl"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Log out
+        </button>
+      </div>
       <div className="h-6" />
     </div>
   );
