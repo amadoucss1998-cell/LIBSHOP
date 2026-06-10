@@ -22,12 +22,28 @@ export default async function SearchPage({
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <h1 className="text-xl font-bold text-gray-800 mb-1">
-        Search results for <span className="text-[#BF1F2E]">&ldquo;{query}&rdquo;</span>
-      </h1>
-      <p className="text-sm text-gray-400 mb-5">{listings.length} listing{listings.length !== 1 ? 's' : ''} found</p>
-      <ListingGrid listings={listings} />
+    <div className="max-w-2xl mx-auto">
+      {query ? (
+        <>
+          <div className="px-4 py-3 flex items-center justify-between">
+            <h2 className="text-[#222] font-bold text-base">
+              Results for <span className="text-[#F7501F]">&ldquo;{query}&rdquo;</span>
+            </h2>
+            <span className="text-[#888] text-sm">{listings.length} items</span>
+          </div>
+          <ListingGrid listings={listings} />
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-24 text-center px-8">
+          <div className="w-20 h-20 rounded-full bg-[#F5F5F5] flex items-center justify-center mb-4">
+            <svg className="w-10 h-10 text-[#ccc]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+            </svg>
+          </div>
+          <p className="text-[#222] font-bold text-lg mb-1">Search for anything</p>
+          <p className="text-[#888] text-sm">Type in the search bar above to find items near you</p>
+        </div>
+      )}
     </div>
   );
 }

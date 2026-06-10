@@ -41,52 +41,100 @@ export default function ProfilePage() {
     setListings((prev) => prev.filter((l) => l.id !== id));
   };
 
-  if (loading) return <div className="flex items-center justify-center py-20 text-gray-400">Loading...</div>;
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-24">
+      <div className="w-8 h-8 border-3 border-[#F7501F] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  // Not logged in
+  if (!profile) return (
+    <div className="max-w-md mx-auto px-6 py-16 text-center">
+      <div className="w-20 h-20 rounded-full bg-[#F5F5F5] flex items-center justify-center mx-auto mb-5">
+        <svg className="w-10 h-10 text-[#ccc]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      </div>
+      <h2 className="text-[#222] font-bold text-xl mb-2">Sign in to see your profile</h2>
+      <p className="text-[#888] text-sm mb-6">Manage your listings, chat with buyers, and more.</p>
+      <button
+        onClick={() => router.push('/auth')}
+        className="w-full bg-[#F7501F] text-white font-bold py-4 rounded-xl"
+      >
+        Sign in / Join letgo
+      </button>
+    </div>
+  );
 
   const activeListing = listings.filter((l) => !l.is_sold && l.is_active);
   const soldListings = listings.filter((l) => l.is_sold);
   const shown = tab === 'active' ? activeListing : soldListings;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <div className="card p-5 mb-5 flex items-center gap-4">
-        <div className="w-16 h-16 rounded-full bg-[#BF1F2E]/10 flex items-center justify-center text-3xl">
-          👤
+    <div className="max-w-2xl mx-auto">
+
+      {/* Profile header */}
+      <div className="bg-white px-5 pt-5 pb-4">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-16 h-16 rounded-full bg-[#F7501F]/10 flex items-center justify-center text-2xl font-black text-[#F7501F]">
+            {profile.full_name?.charAt(0)?.toUpperCase()}
+          </div>
+          <div className="flex-1">
+            <h1 className="text-[#222] font-bold text-xl">{profile.full_name}</h1>
+            <p className="text-[#888] text-sm flex items-center gap-1 mt-0.5">
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+              </svg>
+              {profile.location}
+            </p>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="text-[#888] text-sm font-semibold border border-[#E8E8E8] rounded-full px-4 py-1.5"
+          >
+            Sign out
+          </button>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-gray-800">{profile?.full_name}</h1>
-          <p className="text-sm text-gray-500">📍 {profile?.location}</p>
-          {profile?.whatsapp_number && (
-            <p className="text-sm text-gray-500">📱 {profile.whatsapp_number}</p>
-          )}
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-[#F5F5F5] rounded-xl p-3 text-center">
+            <p className="text-2xl font-black text-[#F7501F]">{activeListing.length}</p>
+            <p className="text-[#888] text-xs font-semibold mt-0.5">Active</p>
+          </div>
+          <div className="bg-[#F5F5F5] rounded-xl p-3 text-center">
+            <p className="text-2xl font-black text-[#4CD964]">{soldListings.length}</p>
+            <p className="text-[#888] text-xs font-semibold mt-0.5">Sold</p>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-[#BF1F2E]">{activeListing.length}</p>
-          <p className="text-sm text-gray-500">Active Listings</p>
-        </div>
-        <div className="card p-4 text-center">
-          <p className="text-3xl font-bold text-green-600">{soldListings.length}</p>
-          <p className="text-sm text-gray-500">Items Sold</p>
-        </div>
+      {/* Post CTA */}
+      <div className="px-4 py-3">
+        <button
+          onClick={() => router.push('/listings/new')}
+          className="w-full bg-[#F7501F] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+          </svg>
+          Sell something
+        </button>
       </div>
 
-      <button
-        onClick={() => router.push('/listings/new')}
-        className="w-full btn-primary py-3 rounded-xl mb-5"
-      >
-        + Post New Ad
-      </button>
-
-      <div className="flex rounded-lg bg-gray-100 p-1 mb-4">
+      {/* Tabs */}
+      <div className="flex bg-[#F5F5F5] mx-4 rounded-xl p-1 mb-3">
         {(['active', 'sold'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 py-2 text-sm font-semibold rounded-md transition-colors capitalize ${
-              tab === t ? 'bg-white text-[#BF1F2E] shadow-sm' : 'text-gray-500'
+            className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-colors ${
+              tab === t ? 'bg-white text-[#222] shadow-sm' : 'text-[#888]'
             }`}
           >
             {t === 'active' ? `Active (${activeListing.length})` : `Sold (${soldListings.length})`}
@@ -94,27 +142,28 @@ export default function ProfilePage() {
         ))}
       </div>
 
+      {/* Listings */}
       {shown.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-16 text-[#888]">
           <p className="text-3xl mb-2">{tab === 'active' ? '📋' : '✅'}</p>
-          <p>{tab === 'active' ? 'No active listings' : 'No sold items yet'}</p>
+          <p className="font-semibold">{tab === 'active' ? 'No active listings' : 'Nothing sold yet'}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2 px-4">
           {shown.map((listing) => (
-            <div key={listing.id} className="relative">
+            <div key={listing.id}>
               <ListingCard listing={listing} />
               {tab === 'active' && (
-                <div className="flex gap-1 mt-1">
+                <div className="flex gap-1.5 mt-1.5">
                   <button
                     onClick={() => markSold(listing.id)}
-                    className="flex-1 bg-green-100 text-green-700 text-xs py-1.5 rounded-lg font-medium hover:bg-green-200 transition-colors"
+                    className="flex-1 bg-[#F5F5F5] text-[#222] text-xs py-2 rounded-lg font-bold hover:bg-[#ECECEC] transition-colors"
                   >
-                    Mark Sold
+                    Mark sold
                   </button>
                   <button
                     onClick={() => deleteListing(listing.id)}
-                    className="flex-1 bg-red-100 text-red-600 text-xs py-1.5 rounded-lg font-medium hover:bg-red-200 transition-colors"
+                    className="flex-1 bg-[#FFF0F0] text-[#E74C3C] text-xs py-2 rounded-lg font-bold hover:bg-[#FFE0E0] transition-colors"
                   >
                     Delete
                   </button>
@@ -124,6 +173,7 @@ export default function ProfilePage() {
           ))}
         </div>
       )}
+      <div className="h-6" />
     </div>
   );
 }

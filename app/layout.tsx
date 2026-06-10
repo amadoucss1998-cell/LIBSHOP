@@ -1,23 +1,25 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import Navbar from '@/components/Navbar';
+import TopBar from '@/components/TopBar';
+import BottomNav from '@/components/BottomNav';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'LibMarket — Buy & Sell in Liberia',
-  description: 'The easiest way to buy and sell locally in Liberia.',
+  title: 'letgo — Buy & sell near you',
+  description: 'Buy and sell second-hand items near you in Liberia.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <Navbar />
-        <main className="min-h-screen bg-gray-50 pb-20">
+      <body className={`${inter.className} bg-[#F5F5F5]`}>
+        <TopBar />
+        <main className="min-h-screen pb-20 pt-[104px]">
           {children}
         </main>
+        <BottomNav />
       </body>
     </html>
   );

@@ -3,19 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --brand-red: #BF1F2E;
-  --brand-blue: #0B3D91;
-  --brand-white: #FFFFFF;
+  --letgo-orange: #F7501F;
+  --letgo-orange-dark: #d94218;
+  --letgo-bg: #F5F5F5;
+  --letgo-card: #FFFFFF;
+  --letgo-text: #222222;
+  --letgo-muted: #888888;
+  --letgo-border: #E8E8E8;
+}
+
+body {
+  background-color: #F5F5F5;
 }
 
 @layer utilities {
-  .btn-primary {
-    @apply bg-[#BF1F2E] hover:bg-[#9e1925] text-white font-semibold px-4 py-2 rounded-lg transition-colors;
-  }
-  .btn-secondary {
-    @apply bg-[#0B3D91] hover:bg-[#082d6b] text-white font-semibold px-4 py-2 rounded-lg transition-colors;
+  .btn-orange {
+    @apply bg-[#F7501F] hover:bg-[#d94218] text-white font-bold transition-colors;
   }
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden;
+    @apply bg-white rounded-xl overflow-hidden;
   }
 }

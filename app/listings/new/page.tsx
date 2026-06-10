@@ -60,7 +60,6 @@ export default function NewListingPage() {
 
     try {
       const listingId = uuidv4();
-
       const imageUrls: string[] = [];
       for (const file of imageFiles) {
         const url = await uploadListingImage(file, listingId);
@@ -72,7 +71,7 @@ export default function NewListingPage() {
         seller_id: userId,
         title: form.title,
         description: form.description,
-        price: parseFloat(form.price),
+        price: parseFloat(form.price) || 0,
         is_negotiable: form.is_negotiable,
         category_id: parseInt(form.category_id),
         condition: form.condition,
@@ -84,171 +83,187 @@ export default function NewListingPage() {
       if (insertError) throw insertError;
       router.push(`/listings/${listingId}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to post listing. Try again.');
+      setError(err instanceof Error ? err.message : 'Failed to post. Try again.');
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Post New Ad</h1>
+    <div className="max-w-2xl mx-auto bg-white min-h-screen">
+      {/* Header */}
+      <div className="sticky top-[104px] z-10 bg-white border-b border-[#F0F0F0] px-4 py-3 flex items-center gap-3">
+        <button onClick={() => router.back()} className="text-[#222]">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h1 className="text-[#222] font-bold text-lg">What are you selling?</h1>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Images */}
-        <div className="card p-4">
-          <label className="block text-sm font-semibold text-gray-700 mb-3">
-            Photos <span className="font-normal text-gray-400">(up to 5)</span>
-          </label>
+      <form onSubmit={handleSubmit} className="px-4 py-4 space-y-5">
+
+        {/* Photo upload */}
+        <div>
+          <p className="text-[#888] text-xs font-semibold uppercase tracking-wider mb-3">Photos</p>
           <div className="flex gap-2 flex-wrap">
             {imagePreviews.map((src, i) => (
-              <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border">
+              <div key={i} className="relative w-24 h-24 rounded-xl overflow-hidden bg-[#F5F5F5]">
                 <img src={src} alt="" className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={() => removeImage(i)}
-                  className="absolute top-0.5 right-0.5 bg-red-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                  className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white rounded-full text-xs flex items-center justify-center"
                 >✕</button>
               </div>
             ))}
             {imageFiles.length < 5 && (
-              <label className="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#BF1F2E] text-gray-400 text-xs text-center">
-                <span className="text-2xl">+</span>
-                <span>Add Photo</span>
+              <label className="w-24 h-24 flex flex-col items-center justify-center bg-[#F5F5F5] rounded-xl cursor-pointer hover:bg-[#EFEFEF] transition-colors text-[#aaa]">
+                <svg className="w-7 h-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="text-xs font-semibold">Add photo</span>
                 <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
               </label>
             )}
           </div>
+          <p className="text-[#bbb] text-xs mt-2">{imageFiles.length}/5 photos · First photo is the cover</p>
         </div>
 
-        {/* Basic Info */}
-        <div className="card p-4 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Title *</label>
-            <input
-              required
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="e.g. Samsung Galaxy A54 - Excellent Condition"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#BF1F2E]"
-            />
-          </div>
+        <div className="border-t border-[#F0F0F0]" />
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Description *</label>
-            <textarea
-              required
-              rows={4}
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="Describe your item — condition, reason for selling, features..."
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#BF1F2E] resize-none"
-            />
-          </div>
+        {/* Title */}
+        <div>
+          <label className="block text-[#888] text-xs font-semibold uppercase tracking-wider mb-2">Title *</label>
+          <input
+            required
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            placeholder="e.g. Samsung Galaxy A54"
+            className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3 text-[#222] text-sm placeholder-[#bbb] focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30"
+          />
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Price (USD) *</label>
+        {/* Description */}
+        <div>
+          <label className="block text-[#888] text-xs font-semibold uppercase tracking-wider mb-2">Description *</label>
+          <textarea
+            required
+            rows={4}
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            placeholder="Describe what you're selling — features, reason for selling, defects..."
+            className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3 text-[#222] text-sm placeholder-[#bbb] focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30 resize-none"
+          />
+        </div>
+
+        {/* Price */}
+        <div>
+          <label className="block text-[#888] text-xs font-semibold uppercase tracking-wider mb-2">Price (USD) *</label>
+          <div className="flex gap-3 items-start">
+            <div className="relative flex-1">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#888] font-bold text-sm">$</span>
               <input
                 required
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 value={form.price}
                 onChange={(e) => setForm({ ...form, price: e.target.value })}
-                placeholder="0.00"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#BF1F2E]"
+                placeholder="0"
+                className="w-full bg-[#F5F5F5] rounded-xl pl-8 pr-4 py-3 text-[#222] text-sm placeholder-[#bbb] focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30"
               />
             </div>
-            <div className="flex items-end pb-1">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.is_negotiable}
-                  onChange={(e) => setForm({ ...form, is_negotiable: e.target.checked })}
-                  className="w-4 h-4 accent-[#BF1F2E]"
-                />
-                <span className="text-sm text-gray-700">Negotiable</span>
-              </label>
-            </div>
+            <label className="flex items-center gap-2 bg-[#F5F5F5] rounded-xl px-4 py-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.is_negotiable}
+                onChange={(e) => setForm({ ...form, is_negotiable: e.target.checked })}
+                className="w-4 h-4 accent-[#F7501F]"
+              />
+              <span className="text-[#222] text-sm font-medium whitespace-nowrap">Negotiable</span>
+            </label>
           </div>
         </div>
 
-        {/* Category & Condition */}
-        <div className="card p-4 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Category *</label>
-            <select
-              required
-              value={form.category_id}
-              onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#BF1F2E]"
-            >
-              <option value="">Select category...</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-              ))}
-            </select>
-          </div>
+        {/* Category */}
+        <div>
+          <label className="block text-[#888] text-xs font-semibold uppercase tracking-wider mb-2">Category *</label>
+          <select
+            required
+            value={form.category_id}
+            onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+            className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3 text-[#222] text-sm focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30 appearance-none"
+          >
+            <option value="">Select a category...</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+            ))}
+          </select>
+        </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Condition *</label>
-            <div className="flex gap-2 flex-wrap">
-              {CONDITIONS.map((cond) => (
-                <button
-                  key={cond}
-                  type="button"
-                  onClick={() => setForm({ ...form, condition: cond })}
-                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                    form.condition === cond
-                      ? 'bg-[#BF1F2E] text-white border-[#BF1F2E]'
-                      : 'bg-white text-gray-600 border-gray-300'
-                  }`}
-                >
-                  {cond}
-                </button>
-              ))}
-            </div>
+        {/* Condition */}
+        <div>
+          <label className="block text-[#888] text-xs font-semibold uppercase tracking-wider mb-2">Condition *</label>
+          <div className="flex gap-2 flex-wrap">
+            {CONDITIONS.map((cond) => (
+              <button
+                key={cond}
+                type="button"
+                onClick={() => setForm({ ...form, condition: cond })}
+                className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${
+                  form.condition === cond
+                    ? 'bg-[#F7501F] text-white border-[#F7501F]'
+                    : 'bg-white text-[#444] border-[#E8E8E8]'
+                }`}
+              >
+                {cond}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Location */}
-        <div className="card p-4 space-y-4">
+        <div>
+          <label className="block text-[#888] text-xs font-semibold uppercase tracking-wider mb-2">Location *</label>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">City/Town *</label>
-              <input
-                required
-                value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
-                placeholder="Monrovia"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#BF1F2E]"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">County *</label>
-              <select
-                required
-                value={form.county}
-                onChange={(e) => setForm({ ...form, county: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#BF1F2E]"
-              >
-                {LIBERIA_COUNTIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
+            <input
+              required
+              value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+              placeholder="City / Town"
+              className="bg-[#F5F5F5] rounded-xl px-4 py-3 text-[#222] text-sm placeholder-[#bbb] focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30"
+            />
+            <select
+              required
+              value={form.county}
+              onChange={(e) => setForm({ ...form, county: e.target.value })}
+              className="bg-[#F5F5F5] rounded-xl px-4 py-3 text-[#222] text-sm focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30 appearance-none"
+            >
+              {LIBERIA_COUNTIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
         </div>
 
-        {error && <p className="text-red-600 text-sm bg-red-50 px-4 py-3 rounded-lg">{error}</p>}
+        {error && (
+          <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-red-600 text-sm">
+            {error}
+          </div>
+        )}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full btn-primary py-3.5 text-base rounded-xl disabled:opacity-50"
+          className="w-full bg-[#F7501F] hover:bg-[#d94218] text-white font-bold py-4 rounded-xl text-base transition-colors disabled:opacity-50"
         >
-          {loading ? 'Posting...' : 'Post Ad Free →'}
+          {loading ? 'Posting...' : 'Post for free'}
         </button>
+
+        <p className="text-center text-[#888] text-xs pb-4">
+          By posting, you agree to our Terms of Service
+        </p>
       </form>
     </div>
   );

@@ -1,7 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import ListingGrid from '@/components/ListingGrid';
 import CategoryBar from '@/components/CategoryBar';
-import Link from 'next/link';
 
 export const revalidate = 60;
 
@@ -41,28 +40,30 @@ export default async function HomePage({
   const dbError = listingsError || categoriesError;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-4">
-      {/* Hero Banner */}
-      <div className="bg-gradient-to-r from-[#BF1F2E] to-[#0B3D91] rounded-2xl p-6 mb-6 text-white">
-        <h1 className="text-2xl font-bold mb-1">Buy & Sell in Liberia 🇱🇷</h1>
-        <p className="text-white/80 text-sm mb-4">Find deals near you. Post your ad free today.</p>
-        <Link href="/listings/new" className="bg-white text-[#BF1F2E] font-bold px-5 py-2 rounded-lg text-sm hover:bg-gray-100 transition-colors inline-block">
-          Post Free Ad →
-        </Link>
+    <div className="max-w-2xl mx-auto">
+      {/* Category bar */}
+      <div className="py-3">
+        <CategoryBar categories={categories ?? []} activeSlug={categorySlug} />
       </div>
 
       {dbError ? (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-sm text-red-700 space-y-2">
-          <p className="font-semibold">⚠️ Database not set up yet</p>
-          <p>Run <code className="bg-red-100 px-1 rounded">supabase/schema.sql</code> in your Supabase SQL Editor, then create a public <code className="bg-red-100 px-1 rounded">listing-images</code> storage bucket.</p>
-          <p className="text-red-500 text-xs font-mono">{dbError.message}</p>
+        <div className="mx-4 bg-orange-50 border border-orange-200 rounded-xl p-5 text-sm text-orange-700 space-y-2">
+          <p className="font-bold">⚠️ Database not set up yet</p>
+          <p>Run <code className="bg-orange-100 px-1 rounded">supabase/schema.sql</code> in your Supabase SQL Editor, then create a public <code className="bg-orange-100 px-1 rounded">listing-images</code> storage bucket.</p>
+          <p className="text-orange-400 text-xs font-mono">{dbError.message}</p>
         </div>
       ) : (
         <>
-          <CategoryBar categories={categories ?? []} activeSlug={categorySlug} />
-          <h2 className="text-lg font-bold text-gray-800 mb-3 mt-4">
-            {categorySlug ? `${categories?.find(c => c.slug === categorySlug)?.name ?? ''} Listings` : 'Recent Listings'}
-          </h2>
+          {/* Section header */}
+          <div className="px-4 py-3 flex items-center justify-between">
+            <h2 className="text-[#222] font-bold text-base">
+              {categorySlug
+                ? `${categories?.find(c => c.slug === categorySlug)?.name ?? ''}`
+                : 'Items near you'}
+            </h2>
+            <span className="text-[#888] text-sm">{listings?.length ?? 0} items</span>
+          </div>
+
           <ListingGrid listings={listings ?? []} />
         </>
       )}

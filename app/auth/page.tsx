@@ -31,7 +31,7 @@ export default function AuthPage() {
           phone_number: phone,
           whatsapp_number: phone,
         });
-        setMessage('Account created! Check your email to confirm.');
+        setMessage('Account created! Check your email to confirm, then sign in.');
       }
     } else {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
@@ -42,92 +42,98 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-md">
-        <div className="text-center mb-6">
-          <span className="text-4xl">🇱🇷</span>
-          <h1 className="text-2xl font-bold text-[#BF1F2E] mt-2">LibMarket</h1>
-          <p className="text-gray-500 text-sm">Buy & Sell in Liberia</p>
-        </div>
+    <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto px-6">
 
-        <div className="flex rounded-lg bg-gray-100 p-1 mb-6">
-          {(['login', 'register'] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={`flex-1 py-2 text-sm font-semibold rounded-md transition-colors capitalize ${
-                mode === m ? 'bg-white text-[#BF1F2E] shadow-sm' : 'text-gray-500'
-              }`}
-            >
-              {m === 'login' ? 'Sign In' : 'Sign Up'}
-            </button>
-          ))}
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {mode === 'register' && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="John Doe"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#BF1F2E]"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp / Phone</label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+231 XXX XXXX"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#BF1F2E]"
-                />
-              </div>
-            </>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@email.com"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#BF1F2E]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min 8 characters"
-              minLength={8}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#BF1F2E]"
-            />
-          </div>
-
-          {error && <p className="text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-          {message && <p className="text-green-600 text-sm bg-green-50 px-3 py-2 rounded-lg">{message}</p>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full btn-primary py-3 rounded-lg font-semibold disabled:opacity-50"
-          >
-            {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
-          </button>
-        </form>
+      {/* Logo area */}
+      <div className="pt-12 pb-8 text-center">
+        <span className="text-4xl font-black text-[#F7501F] tracking-tight">letgo</span>
+        <p className="text-[#888] text-sm mt-2">Buy & sell near you</p>
       </div>
+
+      {/* Tabs */}
+      <div className="flex bg-[#F5F5F5] rounded-xl p-1 mb-6">
+        {(['login', 'register'] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => { setMode(m); setError(''); setMessage(''); }}
+            className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-colors ${
+              mode === m ? 'bg-white text-[#222] shadow-sm' : 'text-[#888]'
+            }`}
+          >
+            {m === 'login' ? 'Sign in' : 'Join letgo'}
+          </button>
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-3 flex-1">
+        {mode === 'register' && (
+          <>
+            <input
+              type="text"
+              required
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Full name"
+              className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3.5 text-[#222] text-sm placeholder-[#bbb] focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30"
+            />
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="WhatsApp number (e.g. +231 XXX XXXX)"
+              className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3.5 text-[#222] text-sm placeholder-[#bbb] focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30"
+            />
+          </>
+        )}
+
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email address"
+          className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3.5 text-[#222] text-sm placeholder-[#bbb] focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30"
+        />
+
+        <input
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password (min. 8 characters)"
+          minLength={8}
+          className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3.5 text-[#222] text-sm placeholder-[#bbb] focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30"
+        />
+
+        {error && (
+          <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+        {message && (
+          <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-green-700 text-sm">
+            {message}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-[#F7501F] hover:bg-[#d94218] text-white font-bold py-4 rounded-xl text-sm transition-colors disabled:opacity-50 mt-2"
+        >
+          {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Create account'}
+        </button>
+      </form>
+
+      <p className="text-center text-[#bbb] text-xs py-8">
+        {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+        <button
+          onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
+          className="text-[#F7501F] font-semibold"
+        >
+          {mode === 'login' ? 'Join letgo' : 'Sign in'}
+        </button>
+      </p>
     </div>
   );
 }
