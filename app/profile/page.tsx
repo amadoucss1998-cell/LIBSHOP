@@ -8,6 +8,7 @@ import type { Listing, Profile } from '@/lib/types';
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -18,6 +19,7 @@ export default function ProfilePage() {
       if (!data.user) { router.push('/auth'); return; }
 
       setIsAuthenticated(true);
+      setUserEmail(data.user.email ?? null);
 
       const [profileRes, listingsRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', data.user.id).single(),
@@ -27,7 +29,7 @@ export default function ProfilePage() {
           .order('created_at', { ascending: false }),
       ]);
 
-      setProfile(profileRes.data);
+      setProfile(profileRes.data ?? null);
       setListings(listingsRes.data ?? []);
       setLoading(false);
     });
@@ -74,10 +76,25 @@ export default function ProfilePage() {
     </div>
   );
 
-  // Authenticated but profile row missing — show minimal fallback
+  // Authenticated but profile row missing — show account info + logout
   if (!profile) return (
-    <div className="flex items-center justify-center py-24">
-      <div className="w-8 h-8 border-4 border-[#F7501F] border-t-transparent rounded-full animate-spin" />
+    <div className="max-w-md mx-auto px-6 py-16 text-center">
+      <div className="w-20 h-20 rounded-full bg-[#F7501F]/10 flex items-center justify-center mx-auto mb-5">
+        <svg className="w-10 h-10 text-[#F7501F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      </div>
+      <h2 className="text-[#222] font-bold text-xl mb-1">You&apos;re signed in</h2>
+      <p className="text-[#888] text-sm mb-8">{userEmail}</p>
+      <button
+        onClick={handleSignOut}
+        className="w-full flex items-center justify-center gap-2 bg-[#FFF5F5] border border-[#FFD0D0] text-[#E74C3C] font-bold py-3.5 rounded-xl"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+        Log out
+      </button>
     </div>
   );
 
