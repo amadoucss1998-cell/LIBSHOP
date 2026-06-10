@@ -222,3 +222,46 @@ do $$ begin create policy "views_own_read"    on listing_views for select using 
 -- Reports
 do $$ begin create policy "reports_auth_insert" on reports for insert with check (auth.uid() = reporter_id); exception when duplicate_object then null; end $$;
 do $$ begin create policy "reports_own_read"    on reports for select using (auth.uid() = reporter_id); exception when duplicate_object then null; end $$;
+
+-- ─────────────────────────────────────────
+-- CONVERSATIONS
+-- ─────────────────────────────────────────
+create table if not exists conversations (
+  id uuid default uuid_generate_v4() primary key,
+  listing_id uuid references listings(id) on delete cascade not null,
+  buyer_id uuid references profiles(id) on delete cascade not null,
+  seller_id uuid references profiles(id) on delete cascade not null,
+  last_message text,
+  last_message_at timestamp with time zone default now(),
+  created_at timestamp with time zone default now(),
+  unique(listing_id, buyer_id)
+);
+
+create index if not exists conv_buyer_idx  on conversations(buyer_id);
+create index if not exists conv_seller_idx on conversations(seller_id);
+
+-- ─────────────────────────────────────────
+-- MESSAGES
+-- ─────────────────────────────────────────
+create table if not exists messages (
+  id uuid default uuid_generate_v4() primary key,
+  conversation_id uuid references conversations(id) on delete cascade not null,
+  sender_id uuid references profiles(id) on delete cascade not null,
+  content text not null check (char_length(content) between 1 and 2000),
+  is_read boolean default false,
+  created_at timestamp with time zone default now()
+);
+
+create index if not exists msg_conv_idx on messages(conversation_id, created_at);
+
+-- RLS
+alter table conversations enable row level security;
+alter table messages enable row level security;
+
+do $$ begin create policy "conv_participant_select" on conversations for select using (auth.uid() = buyer_id or auth.uid() = seller_id); exception when duplicate_object then null; end $$;
+do $$ begin create policy "conv_buyer_insert" on conversations for insert with check (auth.uid() = buyer_id); exception when duplicate_object then null; end $$;
+do $$ begin create policy "conv_participant_update" on conversations for update using (auth.uid() = buyer_id or auth.uid() = seller_id); exception when duplicate_object then null; end $$;
+
+do $$ begin create policy "msg_participant_select" on messages for select using (exists (select 1 from conversations c where c.id = conversation_id and (c.buyer_id = auth.uid() or c.seller_id = auth.uid()))); exception when duplicate_object then null; end $$;
+do $$ begin create policy "msg_sender_insert" on messages for insert with check (auth.uid() = sender_id and exists (select 1 from conversations c where c.id = conversation_id and (c.buyer_id = auth.uid() or c.seller_id = auth.uid()))); exception when duplicate_object then null; end $$;
+do $$ begin create policy "msg_sender_update" on messages for update using (auth.uid() = sender_id); exception when duplicate_object then null; end $$;

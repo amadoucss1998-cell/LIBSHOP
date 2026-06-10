@@ -57,6 +57,28 @@ export interface Report {
   created_at: string;
 }
 
+export interface Conversation {
+  id: string;
+  listing_id: string;
+  buyer_id: string;
+  seller_id: string;
+  last_message?: string;
+  last_message_at: string;
+  created_at: string;
+  listings?: Pick<Listing, 'id' | 'title' | 'images' | 'price' | 'is_sold'>;
+  buyer?: Pick<Profile, 'id' | 'full_name' | 'avatar_url'>;
+  seller?: Pick<Profile, 'id' | 'full_name' | 'avatar_url'>;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+}
+
 export type ListingCondition = 'New' | 'Like New' | 'Good' | 'Fair' | 'For Parts';
 export type ReportReason = 'spam' | 'misleading' | 'prohibited' | 'offensive' | 'scam' | 'other';
 

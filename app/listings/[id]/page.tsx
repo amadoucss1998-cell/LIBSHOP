@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import ListingActions from '@/components/ListingActions';
 import ReportButton from '@/components/ReportButton';
+import StartChatButton from '@/components/StartChatButton';
 
 export default async function ListingDetailPage({ params }: { params: { id: string } }) {
   const { data: listing } = await supabase
