@@ -48,7 +48,7 @@ export default function ReportButton({ listingId }: { listingId: string }) {
               <div className="text-center py-4">
                 <p className="text-2xl mb-2">✅</p>
                 <p className="font-bold text-[#222]">Report submitted</p>
-                <p className="text-[#888] text-sm mt-1">Thank you for helping keep letgo safe.</p>
+                <p className="text-[#888] text-sm mt-1">Thank you for helping keep theonline18 safe.</p>
               </div>
             ) : (
               <form onSubmit={handleReport}>

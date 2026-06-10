@@ -66,7 +66,7 @@ export default function ProfilePage() {
         onClick={() => router.push('/auth')}
         className="w-full bg-[#F7501F] text-white font-bold py-4 rounded-xl"
       >
-        Sign in / Join letgo
+        Sign in / Join theonline18
       </button>
     </div>
   );

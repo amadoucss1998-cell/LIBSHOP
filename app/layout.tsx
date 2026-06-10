@@ -7,7 +7,7 @@ import BottomNav from '@/components/BottomNav';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'letgo — Buy & sell near you',
+  title: 'theonline18 — Buy & sell near you',
   description: 'Buy and sell second-hand items near you in Liberia.',
 };
 

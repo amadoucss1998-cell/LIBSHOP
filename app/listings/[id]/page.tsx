@@ -165,7 +165,7 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
           <div className="sticky bottom-16 bg-white border-t border-[#E8E8E8] px-4 py-3 flex gap-3">
             {seller?.whatsapp_number && (
               <a
-                href={`https://wa.me/${seller.whatsapp_number.replace(/[^\d+]/g, '')}?text=${encodeURIComponent(`Hi! I saw your listing "${listing.title}" on letgo and I'm interested. Is it still available?`)}`}
+                href={`https://wa.me/${seller.whatsapp_number.replace(/[^\d+]/g, '')}?text=${encodeURIComponent(`Hi! I saw your listing "${listing.title}" on theonline18 and I'm interested. Is it still available?`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 flex items-center justify-center gap-2 bg-[#F7501F] text-white font-bold py-3.5 rounded-xl text-sm"

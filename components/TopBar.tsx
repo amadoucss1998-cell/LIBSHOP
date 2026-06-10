@@ -19,7 +19,7 @@ export default function TopBar() {
       {/* Top row: logo + location */}
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <Link href="/" className="flex items-center gap-1">
-          <span className="text-[22px] font-black text-[#F7501F] tracking-tight leading-none">letgo</span>
+          <span className="text-[22px] font-black text-[#F7501F] tracking-tight leading-none">theonline18</span>
         </Link>
         <div className="flex items-center gap-1 text-[#888] text-sm">
           <svg className="w-4 h-4 text-[#F7501F]" fill="currentColor" viewBox="0 0 20 20">

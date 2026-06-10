@@ -77,7 +77,7 @@ export default function AuthPage() {
 
       {/* Logo */}
       <div className="pt-12 pb-8 text-center">
-        <span className="text-4xl font-black text-[#F7501F] tracking-tight">letgo</span>
+        <span className="text-4xl font-black text-[#F7501F] tracking-tight">theonline18</span>
         <p className="text-[#888] text-sm mt-2">Buy & sell near you</p>
       </div>
 
@@ -92,7 +92,7 @@ export default function AuthPage() {
               mode === m ? 'bg-white text-[#222] shadow-sm' : 'text-[#888]'
             }`}
           >
-            {m === 'login' ? 'Sign in' : 'Join letgo'}
+            {m === 'login' ? 'Sign in' : 'Join theonline18'}
           </button>
         ))}
       </div>
@@ -166,7 +166,7 @@ export default function AuthPage() {
           onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
           className="text-[#F7501F] font-semibold"
         >
-          {mode === 'login' ? 'Join letgo' : 'Sign in'}
+          {mode === 'login' ? 'Join theonline18' : 'Sign in'}
         </button>
       </p>
     </div>
