@@ -1,18 +1,45 @@
 'use client';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
-// When Supabase OAuth redirects to the root with #access_token=..., forward to the
-// dedicated callback page so it can process the session and redirect cleanly.
+// lib/supabase.ts sets 'oauth_redirect' in sessionStorage before the Supabase client
+// clears the hash. We check that flag here and redirect once the session is ready.
 export default function AuthHashHandler() {
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const hash = window.location.hash;
-    if (!hash.includes('access_token')) return;
+  const router = useRouter();
 
-    // Hard-navigate to /auth/callback carrying the hash so Supabase can pick it up
-    window.location.replace('/auth/callback' + hash);
-  }, []);
+  useEffect(() => {
+    if (!sessionStorage.getItem('oauth_redirect')) return;
+    sessionStorage.removeItem('oauth_redirect');
+
+    // Session is already stored in localStorage by the time we get here.
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return; // shouldn't happen, but bail gracefully
+
+      // Create profile row on first Google sign-in
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (!existing) {
+        const name =
+          session.user.user_metadata?.full_name ||
+          session.user.user_metadata?.name ||
+          session.user.email?.split('@')[0] ||
+          'User';
+        await supabase.from('profiles').insert({
+          id: session.user.id,
+          full_name: name,
+          avatar_url: session.user.user_metadata?.avatar_url ?? null,
+        });
+      }
+
+      // Hard reload so the whole app boots with the fresh session
+      window.location.replace('/');
+    });
+  }, [router]);
 
   return null;
 }
-

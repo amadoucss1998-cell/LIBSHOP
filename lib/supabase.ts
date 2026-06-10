@@ -9,6 +9,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+// Flag OAuth tokens BEFORE creating the client — Supabase clears the hash on init.
+if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
+  sessionStorage.setItem('oauth_redirect', '1');
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // ─── Image upload ────────────────────────────────────────────────────────────
