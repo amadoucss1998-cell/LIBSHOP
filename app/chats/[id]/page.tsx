@@ -32,8 +32,8 @@ export default function ChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    bottomRef.current?.scrollIntoView({ behavior });
   }, []);
 
   useEffect(() => {
@@ -42,7 +42,6 @@ export default function ChatPage() {
       const uid = data.user.id;
       setUserId(uid);
 
-      // Fetch conversation
       const { data: conv } = await supabase
         .from('conversations')
         .select(`*, listings(id, title, images, price, is_sold), buyer:profiles!conversations_buyer_id_fkey(id, full_name, avatar_url), seller:profiles!conversations_seller_id_fkey(id, full_name, avatar_url)`)
@@ -55,7 +54,6 @@ export default function ChatPage() {
       }
       setConversation(conv as Conversation);
 
-      // Fetch messages
       const { data: msgs } = await supabase
         .from('messages')
         .select('*')
@@ -65,7 +63,6 @@ export default function ChatPage() {
       setMessages((msgs as Message[]) ?? []);
       setLoading(false);
 
-      // Mark unread as read
       await supabase
         .from('messages')
         .update({ is_read: true })
@@ -88,7 +85,6 @@ export default function ChatPage() {
             if (prev.find((m) => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
-          // Mark as read if not sender
           if (userId && newMsg.sender_id !== userId) {
             supabase.from('messages').update({ is_read: true }).eq('id', newMsg.id);
           }
@@ -99,10 +95,21 @@ export default function ChatPage() {
     return () => { supabase.removeChannel(channel); };
   }, [convId, userId]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
-    if (!loading) scrollToBottom();
-  }, [messages, loading, scrollToBottom]);
+    if (!loading) scrollToBottom('instant');
+  }, [loading, scrollToBottom]);
+
+  useEffect(() => {
+    if (messages.length > 0) scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 96)}px`;
+  }, [input]);
 
   async function sendMessage() {
     if (!input.trim() || !userId || !conversation || sending) return;
@@ -123,6 +130,7 @@ export default function ChatPage() {
         .eq('id', convId);
     }
     setSending(false);
+    textareaRef.current?.focus();
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -148,15 +156,16 @@ export default function ChatPage() {
   const thumb = listing?.images?.[0];
   const formattedPrice = listing?.price === 0
     ? 'Free'
-    : listing?.price
+    : listing?.price != null
       ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(listing.price)
       : '';
 
   return (
-    <div className="max-w-lg mx-auto bg-[#F5F5F5] flex flex-col" style={{ minHeight: 'calc(100vh - 104px)' }}>
-      {/* Header */}
-      <div className="sticky top-[104px] z-10 bg-white border-b border-[#F0F0F0] px-4 py-3 flex items-center gap-3">
-        <button onClick={() => router.back()} className="text-[#222] p-1 -ml-1">
+    <div className="flex flex-col bg-[#F5F5F5]" style={{ height: 'calc(100dvh - 104px - 64px)' }}>
+
+      {/* ── Header ── */}
+      <div className="flex-shrink-0 bg-white border-b border-[#F0F0F0] px-4 py-3 flex items-center gap-3">
+        <button onClick={() => router.back()} className="text-[#222] p-1 -ml-1 flex-shrink-0">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
           </svg>
@@ -170,55 +179,69 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Listing card */}
-      {listing && (
-        <Link href={`/listings/${listing.id}`} className="mx-4 mt-3 bg-white rounded-xl shadow-sm flex items-center gap-3 p-3 border border-[#F0F0F0]">
-          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-[#F5F5F5] flex-shrink-0">
-            {thumb ? (
-              <Image src={thumb} alt={listing.title} fill className="object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-xl">📦</div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[#222] font-semibold text-sm truncate">{listing.title}</p>
-            <p className="text-[#F7501F] font-bold text-sm">{formattedPrice}</p>
-          </div>
-          {listing.is_sold && (
-            <span className="text-xs bg-[#F5F5F5] text-[#888] px-2 py-0.5 rounded-full font-semibold">Sold</span>
-          )}
-        </Link>
-      )}
+      {/* ── Scrollable messages area ── */}
+      <div className="flex-1 overflow-y-auto">
 
-      {/* Messages */}
-      <div className="flex-1 px-4 py-4 space-y-2 pb-32">
-        {messages.length === 0 && (
-          <p className="text-center text-[#888] text-sm py-8">No messages yet. Say hello!</p>
-        )}
-        {messages.map((msg) => {
-          const isMine = msg.sender_id === userId;
-          return (
-            <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-              <div className="max-w-[75%]">
-                <div className={`px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words ${
-                  isMine
-                    ? 'bg-[#F7501F] text-white rounded-2xl rounded-br-sm'
-                    : 'bg-white text-[#222] rounded-2xl rounded-bl-sm shadow-sm'
-                }`}>
-                  {msg.content}
-                </div>
-                <p className={`text-[10px] text-[#888] mt-0.5 ${isMine ? 'text-right' : 'text-left'}`}>
-                  {timeAgo(msg.created_at)}
-                </p>
+        {/* Listing card */}
+        {listing && (
+          <div className="px-4 pt-3 pb-1">
+            <Link
+              href={`/listings/${listing.id}`}
+              className="flex items-center gap-3 bg-white rounded-xl shadow-sm p-3 border border-[#F0F0F0]"
+            >
+              <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-[#F5F5F5] flex-shrink-0">
+                {thumb ? (
+                  <Image src={thumb} alt={listing.title} fill className="object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xl">📦</div>
+                )}
               </div>
-            </div>
-          );
-        })}
-        <div ref={bottomRef} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[#222] font-semibold text-sm truncate">{listing.title}</p>
+                <p className="text-[#F7501F] font-bold text-sm">{formattedPrice}</p>
+              </div>
+              {listing.is_sold && (
+                <span className="text-xs bg-[#F5F5F5] text-[#888] px-2 py-0.5 rounded-full font-semibold flex-shrink-0">Sold</span>
+              )}
+            </Link>
+          </div>
+        )}
+
+        {/* Messages */}
+        <div className="px-4 py-3 space-y-2">
+          {messages.length === 0 && (
+            <p className="text-center text-[#888] text-sm py-10">No messages yet — say hello!</p>
+          )}
+          {messages.map((msg, i) => {
+            const isMine = msg.sender_id === userId;
+            const showTime = i === messages.length - 1 ||
+              new Date(messages[i + 1].created_at).getTime() - new Date(msg.created_at).getTime() > 5 * 60 * 1000;
+
+            return (
+              <div key={msg.id}>
+                <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[75%] sm:max-w-[60%] px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words ${
+                    isMine
+                      ? 'bg-[#F7501F] text-white rounded-2xl rounded-br-sm'
+                      : 'bg-white text-[#222] rounded-2xl rounded-bl-sm shadow-sm'
+                  }`}>
+                    {msg.content}
+                  </div>
+                </div>
+                {showTime && (
+                  <p className={`text-[10px] text-[#aaa] mt-1 ${isMine ? 'text-right' : 'text-left'}`}>
+                    {timeAgo(msg.created_at)}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+          <div ref={bottomRef} className="h-2" />
+        </div>
       </div>
 
-      {/* Input bar */}
-      <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-[#E8E8E8] px-4 py-3 flex items-end gap-3 max-w-lg mx-auto" style={{ left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '32rem' }}>
+      {/* ── Input bar ── */}
+      <div className="flex-shrink-0 bg-white border-t border-[#E8E8E8] px-4 py-3 flex items-end gap-3">
         <textarea
           ref={textareaRef}
           value={input}
@@ -226,19 +249,20 @@ export default function ChatPage() {
           onKeyDown={handleKeyDown}
           placeholder="Type a message…"
           rows={1}
-          className="flex-1 resize-none bg-[#F5F5F5] rounded-2xl px-4 py-2.5 text-sm text-[#222] placeholder-[#888] outline-none focus:ring-2 focus:ring-[#F7501F]/30 max-h-24 overflow-y-auto"
-          style={{ lineHeight: '1.4' }}
+          className="flex-1 resize-none bg-[#F5F5F5] rounded-2xl px-4 py-2.5 text-sm text-[#222] placeholder-[#aaa] outline-none focus:ring-2 focus:ring-[#F7501F]/30 overflow-hidden"
+          style={{ lineHeight: '1.5', maxHeight: '96px' }}
         />
         <button
           onClick={sendMessage}
           disabled={!input.trim() || sending}
-          className="w-10 h-10 rounded-full bg-[#F7501F] flex items-center justify-center flex-shrink-0 disabled:opacity-40 transition-opacity"
+          className="w-10 h-10 rounded-full bg-[#F7501F] flex items-center justify-center flex-shrink-0 disabled:opacity-40 active:scale-95 transition-all"
         >
           <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
           </svg>
         </button>
       </div>
+
     </div>
   );
 }
