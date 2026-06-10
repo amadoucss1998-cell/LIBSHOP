@@ -48,6 +48,16 @@ export default function BottomNav() {
           <span className={`text-[10px] font-semibold ${active('/search') ? 'text-[#F7501F]' : 'text-[#888]'}`}>Search</span>
         </Link>
 
+        {/* Chats — only when logged in */}
+        {isLoggedIn ? (
+          <Link href="/chats" className="flex flex-col items-center gap-1 min-w-[48px]">
+            <svg className={`w-6 h-6 ${active('/chats') || pathname.startsWith('/chats/') ? 'text-[#F7501F]' : 'text-[#888]'}`} fill={active('/chats') || pathname.startsWith('/chats/') ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span className={`text-[10px] font-semibold ${active('/chats') || pathname.startsWith('/chats/') ? 'text-[#F7501F]' : 'text-[#888]'}`}>Chats</span>
+          </Link>
+        ) : null}
+
         {/* SELL — center hero button */}
         <Link href="/listings/new" className="flex flex-col items-center gap-1 -mt-4" onClick={(e) => handleAuthRequired(e, '/listings/new')}>
           <div className="w-14 h-14 rounded-full bg-[#F7501F] flex items-center justify-center shadow-lg shadow-[#F7501F]/40">

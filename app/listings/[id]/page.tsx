@@ -177,6 +177,7 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
                 Chat on WhatsApp
               </a>
             )}
+            <StartChatButton listingId={listing.id} sellerId={listing.seller_id} listingTitle={listing.title} />
             {seller?.phone_number && (
               <a
                 href={`tel:${seller.phone_number}`}
