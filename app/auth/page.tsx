@@ -9,7 +9,6 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -22,27 +21,16 @@ export default function AuthPage() {
 
     try {
       if (mode === 'register') {
-        const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: fullName.trim() } },
+        });
         if (signUpError) throw signUpError;
 
-        if (data.user) {
-          const { error: profileError } = await supabase.from('profiles').insert({
-            id: data.user.id,
-            full_name: fullName.trim(),
-            phone_number: phone.trim() || null,
-            whatsapp_number: phone.trim() || null,
-          });
-
-          if (profileError) {
-            // Profile failed — clean up the orphaned auth user
-            await supabase.auth.admin?.deleteUser?.(data.user.id).catch(() => {});
-            throw new Error('Failed to create profile. Please try again.');
-          }
-
-          setMessage('Account created! Check your email to confirm your account, then sign in.');
-          setMode('login');
-          setPassword('');
-        }
+        setMessage('Account created! Check your email to confirm your account, then sign in.');
+        setMode('login');
+        setPassword('');
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) throw signInError;
@@ -144,13 +132,6 @@ export default function AuthPage() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Full name"
-              className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3.5 text-[#222] text-sm placeholder-[#bbb] focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30"
-            />
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="WhatsApp number (e.g. +231 770 123 456)"
               className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3.5 text-[#222] text-sm placeholder-[#bbb] focus:outline-none focus:ring-2 focus:ring-[#F7501F]/30"
             />
           </>
