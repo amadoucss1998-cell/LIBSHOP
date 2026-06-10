@@ -90,6 +90,16 @@ export default function BottomNav() {
           <span className={`text-[10px] font-semibold ${active('/search') ? 'text-[#F7501F]' : 'text-[#888]'}`}>Search</span>
         </Link>
 
+        {/* SELL — center hero button */}
+        <Link href="/listings/new" className="flex flex-col items-center gap-1 -mt-4" onClick={(e) => handleAuthRequired(e, '/listings/new')}>
+          <div className="w-14 h-14 rounded-full bg-[#F7501F] flex items-center justify-center shadow-lg shadow-[#F7501F]/40">
+            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+          </div>
+          <span className="text-[10px] font-bold text-[#F7501F]">SELL</span>
+        </Link>
+
         {/* Chats — only when logged in */}
         {isLoggedIn ? (
           <Link href="/chats" className="flex flex-col items-center gap-1 min-w-[48px]">
@@ -105,17 +115,14 @@ export default function BottomNav() {
             </div>
             <span className={`text-[10px] font-semibold ${active('/chats') || pathname.startsWith('/chats/') ? 'text-[#F7501F]' : 'text-[#888]'}`}>Chats</span>
           </Link>
-        ) : null}
-
-        {/* SELL — center hero button */}
-        <Link href="/listings/new" className="flex flex-col items-center gap-1 -mt-4" onClick={(e) => handleAuthRequired(e, '/listings/new')}>
-          <div className="w-14 h-14 rounded-full bg-[#F7501F] flex items-center justify-center shadow-lg shadow-[#F7501F]/40">
-            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+        ) : (
+          <Link href="/auth" className="flex flex-col items-center gap-1 min-w-[48px]">
+            <svg className="w-6 h-6 text-[#888]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
             </svg>
-          </div>
-          <span className="text-[10px] font-bold text-[#F7501F]">SELL</span>
-        </Link>
+            <span className="text-[10px] font-semibold text-[#888]">Sign in</span>
+          </Link>
+        )}
 
         {/* Saved — only when logged in */}
         {isLoggedIn ? (
@@ -125,14 +132,7 @@ export default function BottomNav() {
             </svg>
             <span className={`text-[10px] font-semibold ${active('/saved') ? 'text-[#F7501F]' : 'text-[#888]'}`}>Saved</span>
           </Link>
-        ) : (
-          <Link href="/auth" className="flex flex-col items-center gap-1 min-w-[48px]">
-            <svg className="w-6 h-6 text-[#888]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-            </svg>
-            <span className="text-[10px] font-semibold text-[#888]">Sign in</span>
-          </Link>
-        )}
+        ) : null}
 
         {/* Profile — only when logged in */}
         {isLoggedIn ? (
